@@ -1,13 +1,15 @@
 <script lang="ts">
   import { getContext } from 'svelte';
-  import { type Point, type LayerEventDetails, type Context, KEY } from '../lib';
+  import { type Point, type LayerEventDetails, type Context, KEY, type RenderProps } from '../lib';
   import Layer from './Layer.svelte';
 
   export let path: Point[];
 
   const { geometryManager } = getContext<Context>(KEY);
 
-  $: render = ({ ctx }) => {
+  $: render = ({ ctx }: RenderProps) => {
+    if (!ctx) return;
+
     const rect = geometryManager.getRectDimension(path);
     const { x, y, width, height } = rect;
 
@@ -17,13 +19,13 @@
     ctx.globalAlpha = 1;
   };
 
-  const handleEvent = (e: LayerEventDetails) => {
-    console.log('event on Rectangle: ', e)
-  }
+  const handleEvent = (e: CustomEvent<LayerEventDetails>) => {
+    console.log('event on Rectangle: ', e);
+  };
 </script>
- 
-<Layer 
-  {render} 
+
+<Layer
+  {render}
   on:mouseenter
   on:mouseleave
   on:mousedown={handleEvent}

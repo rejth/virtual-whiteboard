@@ -60,7 +60,7 @@ export class GeometryManager {
         acc.push(x0, y0, middleX, middleY);
         return acc;
       },
-      ['M', ...stroke[0], 'Q']
+      ['M', ...stroke[0], 'Q'],
     );
 
     d.push('Z');

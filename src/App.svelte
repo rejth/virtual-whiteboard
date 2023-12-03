@@ -273,13 +273,9 @@
 </script>
 
 <main>
-  <Canvas 
-    width={window.innerWidth} 
-    height={window.innerHeight}
-    bind:this={canvasRef}
-  >
+  <Canvas width={window.innerWidth} height={window.innerHeight} bind:this={canvasRef}>
     <ResizableLayer {path}>
-      <Rectangle {path}/>
+      <Rectangle {path} />
     </ResizableLayer>
   </Canvas>
 </main>

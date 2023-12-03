@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext, onMount, onDestroy, createEventDispatcher } from 'svelte';
-  import { type Render, type LayerEvents, type Context, KEY } from '../lib'
+  import { type Render, type LayerEvents, type Context, KEY } from '../lib';
 
   export let render: Render;
   export const getLayerElement = () => layerRef;
@@ -21,11 +21,7 @@
   onDestroy(() => {
     unregister();
     renderManager.removeDrawer(render);
-  })
+  });
 </script>
 
-<div 
-  style:display="none" 
-  data-layer-id={id} 
-  bind:this={layerRef} 
-/>
+<div style:display="none" data-layer-id={id} bind:this={layerRef} />

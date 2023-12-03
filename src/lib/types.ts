@@ -18,13 +18,12 @@ export type PathBounds = {
   y0: number;
   x1: number;
   y1: number;
+};
 
-}
+export type RenderProps = { ctx: CanvasRenderingContext2D | null };
 
 export interface Render {
-  (props: {
-    ctx: CanvasRenderingContext2D | null;
-  }): void;
+  (props: RenderProps): void;
 }
 
 export type CanvasEvents =
@@ -47,8 +46,7 @@ export type CanvasEvents =
   | 'pointerenter'
   | 'pointerleave';
 
-
-export type LayerEvents = Record<CanvasEvents, LayerEventDetails>
+export type LayerEvents = Record<CanvasEvents, LayerEventDetails>;
 export type OriginalEvent = MouseEvent | PointerEvent | TouchEvent;
 
 export type LayerEventDetails = {
@@ -57,6 +55,4 @@ export type LayerEventDetails = {
   originalEvent: OriginalEvent;
 };
 
-export type LayerEventDispatcher = ReturnType<
-  typeof createEventDispatcher<LayerEvents>
->;
+export type LayerEventDispatcher = ReturnType<typeof createEventDispatcher<LayerEvents>>;

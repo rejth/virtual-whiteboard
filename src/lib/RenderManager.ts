@@ -34,7 +34,7 @@ export class RenderManager {
 
   #createHitCanvas() {
     this.hitCanvasRef = document.createElement('canvas');
-    this.hitCtx =  this.hitCanvasRef.getContext('2d', { willReadFrequently: true });
+    this.hitCtx = this.hitCanvasRef.getContext('2d', { willReadFrequently: true });
   }
 
   addDrawer(render: Render) {
@@ -67,8 +67,8 @@ export class RenderManager {
      * TODO:
      * const shape = colorCache[color]
      * if (shape) this.layerManager.dispatchEvent(e, { x, y })
-    */
+     */
 
-    this.layerManager.dispatchEvent(e, { x, y })
+    this.layerManager.dispatchEvent(e, { x, y });
   }
 }

@@ -1,9 +1,4 @@
-import {
-  type CanvasEvents,
-  type LayerEventDispatcher,
-  type OriginalEvent,
-  type Point,
-} from '.';
+import { type CanvasEvents, type LayerEventDispatcher, type OriginalEvent, type Point } from '.';
 
 export class LayerManager {
   layerRef: HTMLElement | null = null;

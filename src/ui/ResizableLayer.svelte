@@ -19,24 +19,18 @@
     return {
       x: handler & W ? x0 : handler & E ? x1 : geometryManager.getMiddlePoint(x0, x1),
       y: handler & N ? y0 : handler & S ? y1 : geometryManager.getMiddlePoint(y0, y1),
-    }
-  }
+    };
+  };
 
   $: bounds = geometryManager.getPathBounds(path);
 </script>
 
 <slot />
 
-<ResizableLayerSurface
-  {active}
-  {path}
-/>
+<ResizableLayerSurface {active} {path} />
 
 {#if active}
   {#each HANDLERS as handler (handler)}
-    <ResizableLayerHandler
-      {active}
-      {...getHandlerPosition(handler, bounds)}
-    />
+    <ResizableLayerHandler {active} {...getHandlerPosition(handler)} />
   {/each}
 {/if}

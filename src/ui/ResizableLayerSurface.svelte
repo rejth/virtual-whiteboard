@@ -1,14 +1,16 @@
 <script lang="ts">
   import { getContext } from 'svelte';
   import Layer from './Layer.svelte';
-  import { type Point, type LayerEventDetails, type Context, KEY } from '../lib';
+  import { type Point, type LayerEventDetails, type Context, KEY, type RenderProps } from '../lib';
 
   export let path: Point[];
   export let active: boolean;
 
   const { geometryManager } = getContext<Context>(KEY);
 
-  $: render = ({ ctx }) => {
+  $: render = ({ ctx }: RenderProps) => {
+    if (!ctx) return;
+
     const rect = geometryManager.getRectDimension(path);
     const { x, y, width, height } = rect;
 
@@ -23,9 +25,9 @@
     ctx.globalAlpha = 1;
   };
 
-  const handleEvent = (e: LayerEventDetails) => {
-    console.log('event on Surface: ', e)
-  }
+  const handleEvent = (e: CustomEvent<LayerEventDetails>) => {
+    console.log('event on Surface: ', e);
+  };
 </script>
 
 <Layer
