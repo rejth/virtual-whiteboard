@@ -4,10 +4,11 @@ module.exports = {
     es2021: true,
   },
   parser: '@typescript-eslint/parser',
-  plugins: ['svelte3', '@typescript-eslint', 'prettier'],
+  plugins: ['@typescript-eslint', 'prettier'],
   extends: [
     'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended',
+    'plugin:svelte/recommended',
     'prettier',
   ],
   ignorePatterns: ['!**/*', 'vite.config.ts', './node_modules/**', './src/**/*.cjs'],
@@ -42,10 +43,10 @@ module.exports = {
     },
     {
       files: ['*.svelte'],
-      processor: 'svelte3/svelte3',
+      parser: 'svelte-eslint-parser',
+      parserOptions: {
+        parser: '@typescript-eslint/parser',
+      },
     },
   ],
-  settings: {
-    'svelte3/typescript': require('typescript'),
-  },
 };
