@@ -35,8 +35,14 @@ export class GeometryManager {
 
   calculatePosition(e: OriginalEvent): Point {
     const rect = (<Element>e.target).getBoundingClientRect();
-    if (e instanceof TouchEvent) return this.getTouchPosition(e, rect);
-    return this.getMousePosition(e, rect);
+
+    if (window.TouchEvent && e instanceof TouchEvent) {
+      return this.getTouchPosition(e, rect);
+    } else if (e instanceof MouseEvent) {
+      return this.getMousePosition(e, rect);
+    }
+
+    return this.defaultPoint;
   }
 
   getRectDimension(path: Point[]): RectDimension {
