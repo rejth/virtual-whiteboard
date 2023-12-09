@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte';
+
   import { type Point, type LayerEventDetails, type Context, KEY, type RenderProps } from '../lib';
   import Layer from './Layer.svelte';
 
@@ -10,11 +11,10 @@
   $: render = ({ ctx }: RenderProps) => {
     if (!ctx) return;
 
-    const rect = geometryManager.getRectDimension(path);
-    const { x, y, width, height } = rect;
+    const { x, y, width, height } = geometryManager.getRectDimension(path);
 
     ctx.globalAlpha = 0.9;
-    ctx.fillStyle = 'mediumturquoise';
+    ctx.fillStyle = 'tomato';
     ctx.fillRect(x, y, width, height);
     ctx.globalAlpha = 1;
   };

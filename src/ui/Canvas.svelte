@@ -1,13 +1,20 @@
 <script lang="ts">
   import { setContext, onMount } from 'svelte';
-  import { type OriginalEvent, type Context, KEY, RenderManager, GeometryManager } from '../lib';
+  import {
+    type HitCanvasRenderingContext2D,
+    type OriginalEvent,
+    type Context,
+    RenderManager,
+    GeometryManager,
+    KEY,
+  } from '../lib';
 
   export let width: number;
   export let height: number;
   export let autoclear: boolean = true;
 
   export const getCanvasElement = (): HTMLCanvasElement => canvasRef;
-  export const getCanvasContext = (): CanvasRenderingContext2D | null => renderManager.ctx;
+  export const getCanvasContext = (): HitCanvasRenderingContext2D | null => renderManager.ctx;
 
   const renderManager = new RenderManager();
   const geometryManager = new GeometryManager();
@@ -33,14 +40,15 @@
   };
 
   const handleEvent = (e: OriginalEvent) => {
-    renderManager.handleEvent(e);
+    const { x, y } = geometryManager.calculatePosition(e);
+    renderManager.handleEvent(e, { x, y });
   };
 </script>
 
 <canvas
-  class="canvas"
   {width}
   {height}
+  class="canvas"
   bind:this={canvasRef}
   on:mousedown={handleEvent}
   on:mouseleave

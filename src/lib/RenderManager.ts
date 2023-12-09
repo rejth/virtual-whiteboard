@@ -1,74 +1,49 @@
-import { GeometryManager, LayerManager, type OriginalEvent, type Render } from '.';
+import {
+  createHitCanvas,
+  LayerManager,
+  type HitCanvasRenderingContext2D,
+  type OriginalEvent,
+  type Render,
+  type Point,
+  type LayerId,
+} from '.';
 
 export class RenderManager {
-  canvasRef: HTMLCanvasElement | null = null;
+  ctx: HitCanvasRenderingContext2D | null = null;
 
-  hitCanvasRef: HTMLCanvasElement | null = null;
-
-  ctx: CanvasRenderingContext2D | null = null;
-
-  hitCtx: CanvasRenderingContext2D | null = null;
-
-  drawers: Set<Render> = new Set();
-
-  geometryManager: GeometryManager;
+  drawers: Map<LayerId, Render> = new Map();
 
   layerManager: LayerManager;
 
   constructor() {
-    this.geometryManager = new GeometryManager();
     this.layerManager = new LayerManager();
   }
 
   init(canvasRef: HTMLCanvasElement) {
-    this.canvasRef = canvasRef;
-
-    this.#createCanvas();
-    this.#createHitCanvas();
+    this.ctx = createHitCanvas(canvasRef);
   }
 
-  #createCanvas() {
-    if (!this.canvasRef) return;
-    this.ctx = this.canvasRef.getContext('2d');
+  addDrawer(layerId: LayerId, render: Render) {
+    this.drawers.set(layerId, render);
   }
 
-  #createHitCanvas() {
-    this.hitCanvasRef = document.createElement('canvas');
-    this.hitCtx = this.hitCanvasRef.getContext('2d', { willReadFrequently: true });
-  }
-
-  addDrawer(render: Render) {
-    this.drawers.add(render);
-  }
-
-  removeDrawer(render: Render) {
-    this.drawers.delete(render);
+  removeDrawer(layerId: LayerId) {
+    this.drawers.delete(layerId);
   }
 
   render() {
-    if (!this.ctx || !this.hitCtx) return;
-    this.drawers.forEach((draw: Render) => draw({ ctx: this.ctx }));
-    this.drawers.forEach((draw: Render) => draw({ ctx: this.hitCtx }));
+    this.drawers.forEach((draw, layerId) => {
+      this.ctx!.setActiveLayerId(layerId);
+      draw({ ctx: this.ctx! });
+    });
   }
 
   clearRect(width: number, height: number) {
-    if (!this.ctx) return;
-    this.ctx.clearRect(0, 0, width, height);
+    this.ctx!.clearRect(0, 0, width, height);
   }
 
-  handleEvent(e: OriginalEvent) {
-    if (!this.hitCtx) return;
-
-    const { x, y } = this.geometryManager.calculatePosition(e);
-    const pixel = this.hitCtx.getImageData(x, y, 1, 1).data;
-    console.log('pixel data: ', pixel);
-
-    /**
-     * TODO:
-     * const shape = colorCache[color]
-     * if (shape) this.layerManager.dispatchEvent(e, { x, y })
-     */
-
-    this.layerManager.dispatchEvent(e, { x, y });
+  handleEvent(e: OriginalEvent, { x, y }: Point) {
+    const activeLayerId = this.ctx!.getLayerId(x, y);
+    this.layerManager.dispatchEvent(e, activeLayerId, { x, y });
   }
 }

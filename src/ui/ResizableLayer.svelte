@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte';
+
   import ResizableLayerSurface from './ResizableLayerSurface.svelte';
   import ResizableLayerHandler from './ResizableLayerHandler.svelte';
   import { type Point, type Context, KEY } from '../lib';
@@ -10,7 +11,6 @@
 
   const [N, S, W, E] = [1, 2, 4, 8];
   const HANDLERS = [N, S, W, E, N | W, N | E, S | W, S | E];
-  const SURFACE = N | S | W | E;
 
   let active = true;
 

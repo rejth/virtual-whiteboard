@@ -3,25 +3,23 @@
   import { type Render, type LayerEvents, type Context, KEY } from '../lib';
 
   export let render: Render;
-  export const getLayerElement = () => layerRef;
+  export const getLayerElement = (): HTMLElement => layerRef;
 
   let layerRef: HTMLElement;
 
   const { renderManager } = getContext<Context>(KEY);
   const { layerManager } = renderManager;
 
-  const dispatch = createEventDispatcher<LayerEvents>();
-  const { id, unregister } = layerManager.register(dispatch);
+  const dispatcher = createEventDispatcher<LayerEvents>();
+  const { id, unregister } = layerManager.register(dispatcher);
 
   onMount(() => {
     layerManager.init(layerRef);
-    renderManager.addDrawer(render);
+    renderManager.addDrawer(id, render);
   });
 
   onDestroy(() => {
     unregister();
-    renderManager.removeDrawer(render);
+    renderManager.removeDrawer(id);
   });
 </script>
-
-<div style:display="none" data-layer-id={id} bind:this={layerRef} />

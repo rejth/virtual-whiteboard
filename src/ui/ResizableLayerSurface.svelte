@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte';
+
   import Layer from './Layer.svelte';
   import { type Point, type LayerEventDetails, type Context, KEY, type RenderProps } from '../lib';
 
@@ -11,8 +12,7 @@
   $: render = ({ ctx }: RenderProps) => {
     if (!ctx) return;
 
-    const rect = geometryManager.getRectDimension(path);
-    const { x, y, width, height } = rect;
+    const { x, y, width, height } = geometryManager.getRectDimension(path);
 
     if (active) {
       ctx.strokeStyle = '#444';

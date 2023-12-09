@@ -9,8 +9,6 @@ if (!rootElement) {
   );
 }
 
-const app = new App({
-  target: rootElement,
-});
+const app = new App({ target: rootElement });
 
 export default app;

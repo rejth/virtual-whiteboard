@@ -1,14 +1,20 @@
-import { type CanvasEvents, type LayerEventDispatcher, type OriginalEvent, type Point } from '.';
+import {
+  type CanvasEvents,
+  type LayerEventDispatcher,
+  type LayerId,
+  type OriginalEvent,
+  type Point,
+} from '.';
 
 export class LayerManager {
   layerRef: HTMLElement | null = null;
 
-  currentLayerId = 0;
+  currentLayerId: LayerId = 0;
 
-  dispatchers: Map<number, LayerEventDispatcher> = new Map();
+  dispatchers: Map<LayerId, LayerEventDispatcher> = new Map();
 
-  init(ref: HTMLElement) {
-    this.layerRef = ref;
+  init(layer: HTMLElement) {
+    this.layerRef = layer;
   }
 
   register(dispatch: LayerEventDispatcher) {
@@ -20,19 +26,12 @@ export class LayerManager {
     };
   }
 
-  unregister(layerId: number): boolean {
+  unregister(layerId: LayerId): boolean {
     return this.dispatchers.delete(layerId);
   }
 
-  dispatchEvent(e: OriginalEvent, position: Point) {
-    const layerId = this.layerRef?.getAttribute('data-layer-id');
-    if (!layerId) return;
-
-    const dispatch = this.dispatchers.get(+layerId);
-
-    dispatch?.(<CanvasEvents>e.type, {
-      ...position,
-      originalEvent: e,
-    });
+  dispatchEvent(e: OriginalEvent, layerId: LayerId, point: Point) {
+    const dispatch = this.dispatchers.get(layerId);
+    dispatch?.(<CanvasEvents>e.type, { originalEvent: e, ...point });
   }
 }

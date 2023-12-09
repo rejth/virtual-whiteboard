@@ -1,5 +1,5 @@
 {
-  "name": "vite-svelte-ts-starter",
+  "name": "canvas-experiments",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,19 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
+    "lint": "prettier --plugin-search-dir . --check . && eslint .",
+    "format": "prettier --plugin-search-dir . --write .",
+    "check-updates": "npx npm-check-updates",
+    "update-packages": "npx npm-check-updates -u"
+  },
+  "lint-staged": {
+    "*.{ts,svelte}": [
+      "npm run format",
+      "npm run lint"
+    ],
+    "*.{css,scss,json,svg,js,cjs,html,md}": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
@@ -18,6 +30,8 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-svelte3": "^4.0.0",
+    "lint-staged": "^15.2.0",
+    "npm-check-updates": "^16.14.11",
     "prettier": "^3.1.0",
     "prettier-plugin-svelte": "^3.1.2",
     "svelte": "^4.2.3",
@@ -25,9 +39,5 @@
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
-  },
-  "dependencies": {
-    "perfect-freehand": "^1.2.0",
-    "roughjs": "^4.6.5"
   }
 }

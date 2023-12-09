@@ -3,10 +3,10 @@ module.exports = {
     browser: true,
     es2021: true,
   },
-  parser: '@typescript-eslint/parser', // Specifies the ESLint parser
-  plugins: ['svelte3', '@typescript-eslint', 'prettier'], // Turn on the plugins and peer plugins
+  parser: '@typescript-eslint/parser',
+  plugins: ['svelte3', '@typescript-eslint', 'prettier'],
   extends: [
-    'plugin:@typescript-eslint/eslint-recommended', // Extends previous rules by rules from @typescript-eslint/eslint-plugin
+    'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended',
     'prettier',
   ],
@@ -45,9 +45,6 @@ module.exports = {
       processor: 'svelte3/svelte3',
     },
   ],
-  globals: {
-    API_URL: true,
-  },
   settings: {
     'svelte3/typescript': require('typescript'),
   },

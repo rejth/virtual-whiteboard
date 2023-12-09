@@ -3,11 +3,6 @@
   import ResizableLayer from './ui/ResizableLayer.svelte';
   import Rectangle from './ui/Rectangle.svelte';
 
-  let canvasRef: HTMLCanvasElement;
-
-  $: canvasElement = canvasRef?.getCanvasElement();
-  $: ctx = canvasRef?.getCanvasContext();
-
   const path = [
     {
       x: 33,
@@ -273,7 +268,7 @@
 </script>
 
 <main>
-  <Canvas width={window.innerWidth} height={window.innerHeight} bind:this={canvasRef}>
+  <Canvas width={window.innerWidth} height={window.innerHeight}>
     <ResizableLayer {path}>
       <Rectangle {path} />
     </ResizableLayer>
