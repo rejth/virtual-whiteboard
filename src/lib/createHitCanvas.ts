@@ -1,17 +1,17 @@
 import type { HitCanvasRenderingContext2D, LayerId, RGB } from '.';
 
 // https://blog.logrocket.com/guide-javascript-bitwise-operators/#sign-propagating-right-shift
-function convertRGBtoLayerId([red, green, blue]: RGB): number {
-  const id = ((red << 16) | (green << 8) | blue) / 2;
+function convertRGBtoLayerId([r, g, b]: RGB): number {
+  const id = ((r << 16) | (g << 8) | b) / 2;
   return id % 1 ? 0 : id;
 }
 
 function convertLayerIdToRGB(id: number): RGB {
   const id2 = id * 2;
-  const red = (id2 >> 16) & 0xff;
-  const green = (id2 >> 8) & 0xff;
-  const blue = id2 & 0xff;
-  return [red, green, blue];
+  const r = (id2 >> 16) & 0xff;
+  const g = (id2 >> 8) & 0xff;
+  const b = id2 & 0xff;
+  return [r, g, b];
 }
 
 const options: CanvasRenderingContext2DSettings = {
@@ -20,44 +20,45 @@ const options: CanvasRenderingContext2DSettings = {
 
 const EXCLUDED_SETTERS: Array<keyof HitCanvasRenderingContext2D> = ['globalAlpha'];
 
-export function createHitCanvas(canvas: HTMLCanvasElement) {
-  let activeLayerId: LayerId;
-
-  const hitCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+export function createHitCanvas(
+  canvas: HTMLCanvasElement,
+  hitCanvas: OffscreenCanvas,
+): HitCanvasRenderingContext2D {
   const hitContext = hitCanvas.getContext('2d', options) as unknown as HitCanvasRenderingContext2D;
   const canvasContext = canvas.getContext('2d');
 
-  const hitCanvasObserver = new MutationObserver(() => {
-    hitCanvas.width = canvas.width;
-    hitCanvas.height = canvas.height;
-  });
+  let activeLayerId: LayerId;
 
-  hitCanvasObserver.observe(canvas, { attributeFilter: ['width', 'height'] });
+  const setActiveLayerId = (layerId: number) => {
+    activeLayerId = layerId;
+  };
+
+  const getLayerIdFromUnderlyingPixel = (x: number, y: number) => {
+    const [r, g, b] = hitContext.getImageData(x, y, 1, 1).data;
+    return convertRGBtoLayerId([r, g, b]);
+  };
+
+  const drawLayerOnHitCanvas = () => {
+    const [r, g, b] = convertLayerIdToRGB(activeLayerId);
+    const layerColor = `rgb(${r},${g},${b})`;
+    hitContext.fillStyle = layerColor;
+    hitContext.strokeStyle = layerColor;
+  };
 
   return new Proxy(canvasContext as unknown as HitCanvasRenderingContext2D, {
     get(target, property: keyof HitCanvasRenderingContext2D) {
-      if (property === 'getLayerId') {
-        return (x: number, y: number) => {
-          const [r, g, b] = hitContext.getImageData(x, y, 1, 1).data;
-          return convertRGBtoLayerId([r, g, b]);
-        };
+      if (property === 'getLayerIdAt') {
+        return getLayerIdFromUnderlyingPixel;
       }
-
       if (property === 'setActiveLayerId') {
-        return (layerId: number) => {
-          activeLayerId = layerId;
-        };
+        return setActiveLayerId;
       }
 
       const value = target[property];
       if (typeof value !== 'function') return value;
 
       return (...args: any[]) => {
-        const [r, g, b] = convertLayerIdToRGB(activeLayerId);
-        const layerColor = `rgb(${r},${g},${b})`;
-        hitContext.fillStyle = layerColor;
-        hitContext.strokeStyle = layerColor;
-
+        drawLayerOnHitCanvas();
         (<Function>hitContext[property])(...args);
 
         return Reflect.apply(value, target, args);

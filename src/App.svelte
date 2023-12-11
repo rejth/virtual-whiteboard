@@ -1,7 +1,10 @@
 <script lang="ts">
   import Canvas from './ui/Canvas.svelte';
   import ResizableLayer from './ui/ResizableLayer.svelte';
-  import Rectangle from './ui/Rectangle.svelte';
+  import Layer from './ui/Layer.svelte';
+  import { GeometryManager } from './lib';
+
+  const geometry = new GeometryManager();
 
   const path = [
     {
@@ -268,9 +271,17 @@
 </script>
 
 <main>
-  <Canvas width={window.innerWidth} height={window.innerHeight}>
-    <ResizableLayer {path}>
-      <Rectangle {path} />
+  <Canvas className="canvas" width={window.innerWidth} height={window.innerHeight}>
+    <ResizableLayer {path} let:bounds>
+      <Layer
+        render={({ ctx }) => {
+          const { x, y, width, height } = geometry.getRectDimension(bounds);
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = 'tomato';
+          ctx.fillRect(x, y, width, height);
+          ctx.globalAlpha = 1;
+        }}
+      />
     </ResizableLayer>
   </Canvas>
 </main>

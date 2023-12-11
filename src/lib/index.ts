@@ -1,5 +1,5 @@
 export { GeometryManager } from './GeometryManager';
-export { LayerManager } from './LayerManager';
+export { EventManager } from './EventManager';
 export { RenderManager } from './RenderManager';
 export { createHitCanvas } from './createHitCanvas';
 

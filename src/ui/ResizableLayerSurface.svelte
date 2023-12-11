@@ -2,9 +2,9 @@
   import { getContext } from 'svelte';
 
   import Layer from './Layer.svelte';
-  import { type Point, type LayerEventDetails, type Context, KEY, type RenderProps } from '../lib';
+  import { KEY, type Context, type RenderProps, type Bounds } from '../lib';
 
-  export let path: Point[];
+  export let bounds: Bounds;
   export let active: boolean;
 
   const { geometryManager } = getContext<Context>(KEY);
@@ -12,7 +12,7 @@
   $: render = ({ ctx }: RenderProps) => {
     if (!ctx) return;
 
-    const { x, y, width, height } = geometryManager.getRectDimension(path);
+    const { x, y, width, height } = geometryManager.getRectDimension(bounds);
 
     if (active) {
       ctx.strokeStyle = '#444';
@@ -24,18 +24,6 @@
     ctx.fillRect(x, y, width, height);
     ctx.globalAlpha = 1;
   };
-
-  const handleEvent = (e: CustomEvent<LayerEventDetails>) => {
-    console.log('event on Surface: ', e);
-  };
 </script>
 
-<Layer
-  {render}
-  on:mouseenter
-  on:mouseleave
-  on:mousedown={handleEvent}
-  on:mouseup
-  on:touchstart
-  on:touchend
-/>
+<Layer {render} on:mouseenter on:mouseleave on:mousedown on:mouseup on:touchstart on:touchend />

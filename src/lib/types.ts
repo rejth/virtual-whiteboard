@@ -1,5 +1,4 @@
 import type { createEventDispatcher } from 'svelte';
-
 import type { GeometryManager, RenderManager } from '.';
 
 export type Context = {
@@ -12,11 +11,12 @@ export type Point = Pick<DOMRect, 'x' | 'y'>;
 export type Dimension = Pick<DOMRect, 'width' | 'height'>;
 export type RectPosition = Pick<DOMRect, 'top' | 'bottom' | 'left' | 'right'>;
 export type RectDimension = Point & Dimension;
-export type PathBounds = { x0: number; y0: number; x1: number; y1: number };
+
+export type Bounds = { x0: number; y0: number; x1: number; y1: number };
 export type RGB = [number, number, number];
 
 export interface HitCanvasRenderingContext2D extends Omit<CanvasRenderingContext2D, 'canvas'> {
-  getLayerId: (x: number, y: number) => number;
+  getLayerIdAt: (x: number, y: number) => number;
   setActiveLayerId: (id: LayerId) => void;
 }
 
@@ -50,9 +50,4 @@ export type CanvasEvents =
 
 export type LayerEvents = Record<CanvasEvents, LayerEventDetails>;
 export type LayerEventDispatcher = ReturnType<typeof createEventDispatcher<LayerEvents>>;
-
-export type LayerEventDetails = {
-  x: number;
-  y: number;
-  originalEvent: OriginalEvent;
-};
+export type LayerEventDetails = Point & { originalEvent: OriginalEvent };

@@ -1,4 +1,4 @@
-import type { OriginalEvent, PathBounds, Point, RectDimension } from './types';
+import type { OriginalEvent, Bounds, Point, RectDimension } from './types';
 
 export class GeometryManager {
   defaultPoint: Point = { x: 0, y: 0 };
@@ -18,15 +18,10 @@ export class GeometryManager {
     };
   }
 
-  getPathBounds(path: Point[]): PathBounds {
-    const from = path[0] ?? this.defaultPoint;
-    const to = path[path.length - 1] ?? this.defaultPoint;
-    return {
-      x0: from.x,
-      y0: from.y,
-      x1: to.x,
-      y1: to.y,
-    };
+  getPathBounds(path: Point[]): Bounds {
+    const from = path[0] || this.defaultPoint;
+    const to = path[path.length - 1] || this.defaultPoint;
+    return { x0: from.x, y0: from.y, x1: to.x, y1: to.y };
   }
 
   getMiddlePoint(from: number, to: number): number {
@@ -38,38 +33,20 @@ export class GeometryManager {
 
     if (window.TouchEvent && e instanceof TouchEvent) {
       return this.getTouchPosition(e, rect);
-    } else if (e instanceof MouseEvent) {
+    } else if (e instanceof MouseEvent || e instanceof PointerEvent) {
       return this.getMousePosition(e, rect);
     }
 
     return this.defaultPoint;
   }
 
-  getRectDimension(path: Point[]): RectDimension {
-    const { x0, y0, x1, y1 } = this.getPathBounds(path);
+  getRectDimension(bounds: Bounds): RectDimension {
+    const { x0, y0, x1, y1 } = bounds;
     return {
       x: Math.min(x0, x1),
       y: Math.min(y0, y1),
       width: Math.abs(x0 - x1),
       height: Math.abs(y0 - y1),
     };
-  }
-
-  getSvgPathFromStroke(stroke: number[][]): string {
-    if (!stroke.length) return '';
-
-    const d = stroke.reduce(
-      (acc, [x0, y0], i, array) => {
-        const [x1, y1] = array[(i + 1) % array.length];
-        const middleX = this.getMiddlePoint(x0, x1);
-        const middleY = this.getMiddlePoint(y0, y1);
-        acc.push(x0, y0, middleX, middleY);
-        return acc;
-      },
-      ['M', ...stroke[0], 'Q'],
-    );
-
-    d.push('Z');
-    return d.join(' ');
   }
 }

@@ -1,15 +1,18 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
     es2021: true,
+    node: true,
   },
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint', 'prettier'],
+  plugins: ['@typescript-eslint'],
   extends: [
+    'eslint:recommended',
     'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:svelte/recommended',
-    'prettier',
+    'plugin:svelte/prettier',
   ],
   ignorePatterns: ['!**/*', 'vite.config.ts', './node_modules/**', './src/**/*.cjs'],
   overrides: [
@@ -19,11 +22,8 @@ module.exports = {
         'no-underscore-dangle': 'off',
         'no-await-in-loop': 'off',
         'no-plusplus': 'off',
-        'no-restricted-syntax': 'off',
         'class-methods-use-this': 'off',
         '@typescript-eslint/no-unused-vars': 'off',
-        '@typescript-eslint/lines-between-class-members': 'off',
-        '@typescript-eslint/no-var-requires': 'off',
         '@typescript-eslint/ban-ts-comment': 'off',
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/no-explicit-any': 'off',

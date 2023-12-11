@@ -12,14 +12,15 @@
   export let width: number;
   export let height: number;
   export let autoclear: boolean = true;
+  export let className: string;
 
-  export const getCanvasElement = (): HTMLCanvasElement => canvasRef;
-  export const getCanvasContext = (): HitCanvasRenderingContext2D | null => renderManager.ctx;
+  export const getCanvasElement = (): HTMLCanvasElement => canvas;
+  export const getCanvasContext = (): HitCanvasRenderingContext2D | null => renderManager.context;
 
   const renderManager = new RenderManager();
   const geometryManager = new GeometryManager();
 
-  let canvasRef: HTMLCanvasElement;
+  let canvas: HTMLCanvasElement;
   let frame: number;
 
   setContext<Context>(KEY, {
@@ -28,7 +29,7 @@
   });
 
   onMount(() => {
-    renderManager.init(canvasRef);
+    renderManager.init(canvas);
     frame = requestAnimationFrame(() => draw());
     return () => cancelAnimationFrame(frame);
   });
@@ -39,32 +40,45 @@
     frame = requestAnimationFrame(() => draw());
   };
 
+  const handleMouseMoveEvent = (e: MouseEvent) => {
+    renderManager.handleMouseEnterEvent(e);
+  };
+
   const handleEvent = (e: OriginalEvent) => {
-    const { x, y } = geometryManager.calculatePosition(e);
-    renderManager.handleEvent(e, { x, y });
+    renderManager.handleEvent(e);
   };
 </script>
 
 <canvas
   {width}
   {height}
-  class="canvas"
-  bind:this={canvasRef}
+  class={className}
+  bind:this={canvas}
+  on:click={handleEvent}
   on:mousedown={handleEvent}
-  on:mouseleave
-  on:mouseup
-  on:mouseenter
-  on:mousemove
-  on:pointerdown
-  on:pointermove
-  on:pointerup
-  on:pointercancel
-  on:touchstart
-  on:touchmove
-  on:touchend
-  on:touchcancel
-  on:wheel
+  on:mouseup={handleEvent}
+  on:mouseenter={handleEvent}
+  on:mouseleave={handleEvent}
+  on:mousemove={handleMouseMoveEvent}
+  on:pointerdown={handleEvent}
+  on:pointerup={handleEvent}
+  on:pointerenter={handleMouseMoveEvent}
+  on:pointerleave={handleEvent}
+  on:pointermove={handleEvent}
+  on:pointercancel={handleEvent}
+  on:touchstart={handleEvent}
+  on:touchend={handleEvent}
+  on:touchmove={handleEvent}
+  on:touchcancel={handleEvent}
   on:contextmenu
+  on:wheel
+  on:drag
+  on:dragend
+  on:dragenter
+  on:dragstart
+  on:dragleave
+  on:dragover
+  on:drop
 />
 
 <slot />

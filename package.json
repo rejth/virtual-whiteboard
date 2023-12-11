@@ -11,13 +11,13 @@
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
-    "check-updates": "npx npm-check-updates",
-    "update-packages": "npx npm-check-updates -u"
+    "check-updates": "yarn npm-check-updates",
+    "update-packages": "yarn npm-check-updates -u"
   },
   "lint-staged": {
     "*.{ts,svelte}": [
-      "npm run format",
-      "npm run lint"
+      "yarn format",
+      "yarn lint"
     ],
     "*.{css,scss,json,svg,js,cjs,html,md}": "prettier --write --ignore-unknown"
   },
