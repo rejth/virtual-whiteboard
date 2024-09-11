@@ -1,4 +1,4 @@
-import type { HitCanvasRenderingContext2D, LayerId, RGB } from '.';
+import type { HitCanvasRenderingContext2D, LayerId, RGB } from './types';
 
 // https://blog.logrocket.com/guide-javascript-bitwise-operators/#sign-propagating-right-shift
 function convertRGBtoLayerId([r, g, b]: RGB): number {

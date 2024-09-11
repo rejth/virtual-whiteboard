@@ -1,12 +1,10 @@
+import { createHitCanvas, EventManager, GeometryManager } from './index';
 import {
-  createHitCanvas,
-  EventManager,
-  GeometryManager,
   type HitCanvasRenderingContext2D,
   type OriginalEvent,
   type Render,
   type LayerId,
-} from '.';
+} from './types';
 
 export class RenderManager {
   context: HitCanvasRenderingContext2D | null = null;

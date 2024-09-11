@@ -1,5 +1,5 @@
 import type { createEventDispatcher } from 'svelte';
-import type { GeometryManager, RenderManager } from '.';
+import type { GeometryManager, RenderManager } from './index';
 
 export type Context = {
   renderManager: RenderManager;

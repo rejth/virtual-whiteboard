@@ -4,7 +4,7 @@ import {
   type LayerId,
   type OriginalEvent,
   type Point,
-} from '.';
+} from './types';
 
 export class EventManager {
   currentLayerId: LayerId = 0;
