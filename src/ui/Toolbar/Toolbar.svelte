@@ -1,0 +1,122 @@
+<script lang="ts">
+  import PanIcon from './PanIcon.svelte';
+  import SelectIcon from './SelectIcon.svelte';
+  import NoteIcon from './NoteIcon.svelte';
+  import TextIcon from './TextIcon.svelte';
+
+  $: tools = [
+    {
+      label: 'Note',
+      type: null,
+      icon: NoteIcon,
+      hoverText: 'Drag to add new sticker',
+      disabled: false,
+    },
+    {
+      label: 'Text',
+      type: null,
+      icon: TextIcon,
+      hoverText: 'Drag to add new text area',
+    },
+    {
+      label: 'Pan',
+      type: null,
+      icon: PanIcon,
+      hoverText: 'Pan tool',
+      disabled: false,
+    },
+    {
+      label: 'Select',
+      type: null,
+      icon: SelectIcon,
+      hoverText: 'Select tool',
+      disabled: false,
+    },
+  ];
+
+  const onClick = (type: any) => {};
+</script>
+
+<ul class="toolbar" id="toolbar">
+  {#each tools as { label, type, icon, hoverText, ...options }}
+    <li>
+      <span
+        tabindex="0"
+        role="button"
+        class="tool"
+        on:click={() => onClick(type)}
+        on:keydown={() => onClick(type)}
+      >
+        <span
+          class="icon"
+          class:active={false}
+          class:disabled={options?.disabled}
+          title={hoverText}
+        >
+          <svelte:component this={icon} />
+        </span>
+        <span class="text">{label}</span>
+      </span>
+    </li>
+  {/each}
+</ul>
+
+<style>
+  .toolbar {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+
+    margin: 1rem;
+    padding: 0.5em 0.4em 0.2em;
+    box-shadow: 0 2px 6px 0 #00263a0f;
+    background-color: #ffffff;
+
+    border: 2px solid #f4f4f6;
+    border-radius: 6px;
+    transform: translateX(-50%);
+    pointer-events: all;
+    z-index: 100;
+  }
+
+  .tool {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 0.2em 0.2em;
+  }
+
+  .icon {
+    font-size: 1em !important;
+    display: inline-block;
+    width: 3em;
+    min-width: 2em;
+    height: 3em;
+    padding: 0.5em 0.5rem;
+    margin: 0;
+    cursor: pointer;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+
+  .disabled {
+    color: #d3d3d3;
+    pointer-events: none;
+  }
+
+  .active {
+    background-color: #f4f4f6;
+  }
+
+  .text {
+    font-size: 0.8em;
+    margin: 0;
+    margin-top: 0.5em;
+    text-align: center;
+  }
+</style>

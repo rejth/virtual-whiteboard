@@ -693,6 +693,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/canvas-size@npm:^1.2.2":
+  version: 1.2.2
+  resolution: "@types/canvas-size@npm:1.2.2"
+  checksum: 10c0/d79fb9fda90d6783b69f56f1b286f57e7c079a1a548b09caf43435232d7df0c575daedece50a197d8dcf77ba288b8db4a0241233e1c7a3b0c959593fd5afa892
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:*, @types/estree@npm:^1.0.0, @types/estree@npm:^1.0.1":
   version: 1.0.5
   resolution: "@types/estree@npm:1.0.5"
@@ -1259,8 +1266,10 @@ __metadata:
   dependencies:
     "@sveltejs/vite-plugin-svelte": "npm:^3.0.1"
     "@tsconfig/svelte": "npm:^5.0.2"
+    "@types/canvas-size": "npm:^1.2.2"
     "@typescript-eslint/eslint-plugin": "npm:^6.13.2"
     "@typescript-eslint/parser": "npm:^6.13.2"
+    canvas-size: "npm:^2.0.0"
     eslint: "npm:^8.55.0"
     eslint-config-prettier: "npm:^9.1.0"
     eslint-plugin-prettier: "npm:^5.0.1"
@@ -1276,6 +1285,13 @@ __metadata:
     vite: "npm:^5.0.7"
   languageName: unknown
   linkType: soft
+
+"canvas-size@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "canvas-size@npm:2.0.0"
+  checksum: 10c0/9bb9134fb8c59036937d0fee258676553fbf1e97ef74c516c1277934e58dc4f463dd4a15b5edf57f50a2f3ef7d2e6f04e316cdb85b8fbcdd21050433df507657
+  languageName: node
+  linkType: hard
 
 "chalk@npm:5.3.0, chalk@npm:^5.0.1, chalk@npm:^5.2.0, chalk@npm:^5.3.0":
   version: 5.3.0

@@ -14,20 +14,43 @@ function convertLayerIdToRGB(id: number): RGB {
   return [r, g, b];
 }
 
-const options: CanvasRenderingContext2DSettings = {
+/**
+ * Offscreen canvas settings for rendering optimization.
+ */
+const settings: CanvasRenderingContext2DSettings = {
   willReadFrequently: true,
 };
 
-const EXCLUDED_SETTERS: Array<keyof HitCanvasRenderingContext2D> = ['globalAlpha'];
+/**
+ * A list of canvas context setters that we do not need to use on the offscreen canvas, so this allows to optimize rendering.
+ * */
+const EXCLUDED_SETTERS: Array<keyof HitCanvasRenderingContext2D> = [
+  'shadowBlur',
+  'globalCompositeOperation',
+  'globalAlpha',
+];
 
+/**
+ * Under the hood, we proxy all CanvasRenderingContext2D methods to a second, offscreen canvas.
+ * This approach can be useful for identifying the corresponding layer using a unique fill and stroke color and then re-dispatch an event to the Layer component.
+ * When an event occurs on the main canvas, the color of the pixel at the event coordinates is read from the offscreen canvas and converted to unique layer id.
+ */
 export function createHitCanvas(
   canvas: HTMLCanvasElement,
-  hitCanvas: OffscreenCanvas,
+  contextSettings?: CanvasRenderingContext2DSettings,
 ): HitCanvasRenderingContext2D {
-  const hitContext = hitCanvas.getContext('2d', options) as unknown as HitCanvasRenderingContext2D;
-  const canvasContext = canvas.getContext('2d');
+  const hitCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+  const hitContext = hitCanvas.getContext('2d', settings) as unknown as HitCanvasRenderingContext2D;
+  const mainContext = canvas.getContext('2d', contextSettings);
 
   let activeLayerId: LayerId;
+
+  const hitCanvasObserver = new MutationObserver(() => {
+    hitCanvas.width = canvas.width;
+    hitCanvas.height = canvas.height;
+  });
+
+  hitCanvasObserver.observe(canvas, { attributeFilter: ['width', 'height'] });
 
   const setActiveLayerId = (layerId: number) => {
     activeLayerId = layerId;
@@ -45,22 +68,17 @@ export function createHitCanvas(
     hitContext.strokeStyle = layerColor;
   };
 
-  return new Proxy(canvasContext as unknown as HitCanvasRenderingContext2D, {
+  return new Proxy(mainContext as unknown as HitCanvasRenderingContext2D, {
     get(target, property: keyof HitCanvasRenderingContext2D) {
-      if (property === 'getLayerIdAt') {
-        return getLayerIdFromUnderlyingPixel;
-      }
-      if (property === 'setActiveLayerId') {
-        return setActiveLayerId;
-      }
+      if (property === 'getLayerIdAt') return getLayerIdFromUnderlyingPixel;
+      if (property === 'setActiveLayerId') return setActiveLayerId;
 
       const value = target[property];
       if (typeof value !== 'function') return value;
 
-      return (...args: any[]) => {
+      return (...args: unknown[]) => {
         drawLayerOnHitCanvas();
         (<Function>hitContext[property])(...args);
-
         return Reflect.apply(value, target, args);
       };
     },

@@ -1,6 +1,6 @@
 <script lang="ts">
   import Layer from './Layer.svelte';
-  import { type RenderProps } from '../lib';
+  import { COLORS, type RenderProps } from '../lib';
 
   export let x: number;
   export let y: number;
@@ -8,7 +8,7 @@
 
   $: render = ({ ctx }: RenderProps) => {
     if (!ctx) return;
-    ctx.fillStyle = active ? '#111' : '#444';
+    ctx.fillStyle = active ? COLORS.FLIPPED_CARD_FRONT_BACKGROUND : COLORS.SELECTION;
     ctx.fillRect(x - 6, y - 6, 12, 12);
   };
 </script>

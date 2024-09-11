@@ -2,7 +2,7 @@
   import { getContext } from 'svelte';
 
   import Layer from './Layer.svelte';
-  import { KEY, type Context, type RenderProps, type Bounds } from '../lib';
+  import { KEY, type Context, type RenderProps, type Bounds, COLORS } from '../lib';
 
   export let bounds: Bounds;
   export let active: boolean;
@@ -15,7 +15,7 @@
     const { x, y, width, height } = geometryManager.getRectDimension(bounds);
 
     if (active) {
-      ctx.strokeStyle = '#444';
+      ctx.strokeStyle = COLORS.SELECTION;
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, width, height);
     }

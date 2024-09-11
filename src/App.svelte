@@ -3,6 +3,9 @@
   import ResizableLayer from './ui/ResizableLayer.svelte';
   import Layer from './ui/Layer.svelte';
   import { GeometryManager } from './lib';
+  import Zoom from './ui/Zoom/Zoom.svelte';
+  import UndoRedo from './ui/UndoRedo/UndoRedo.svelte';
+  import Toolbar from './ui/Toolbar/Toolbar.svelte';
 
   const geometry = new GeometryManager();
 
@@ -271,17 +274,20 @@
 </script>
 
 <main>
+  <Toolbar />
   <Canvas className="canvas" width={window.innerWidth} height={window.innerHeight}>
     <ResizableLayer {path} let:bounds>
       <Layer
         render={({ ctx }) => {
           const { x, y, width, height } = geometry.getRectDimension(bounds);
           ctx.globalAlpha = 0.9;
-          ctx.fillStyle = 'tomato';
+          ctx.fillStyle = '#ffd670';
           ctx.fillRect(x, y, width, height);
           ctx.globalAlpha = 1;
         }}
       />
     </ResizableLayer>
   </Canvas>
+  <UndoRedo />
+  <Zoom />
 </main>

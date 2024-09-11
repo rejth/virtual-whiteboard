@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setContext, onMount } from 'svelte';
+  import { setContext, onMount, createEventDispatcher } from 'svelte';
   import {
     type HitCanvasRenderingContext2D,
     type OriginalEvent,
@@ -7,11 +7,27 @@
     RenderManager,
     GeometryManager,
     KEY,
+    getMaxPixelRatio,
   } from '../lib';
 
-  export let width: number;
-  export let height: number;
-  export let autoclear: boolean = true;
+  /**
+   * When unset, the canvas will use its clientWidth property.
+   */
+  export let width: number | null = null;
+  /**
+   * When unset, the canvas will use its clientHeight property.
+   */
+  export let height: number | null = null;
+  /**
+   * If pixelRatio is unset, the canvas uses devicePixelRatio binding to match the window’s pixel dens.
+   * If pixelRatio is set to "auto", the canvas-size library is used to automatically calculate the maximum supported pixel ratio based on the browser and canvas size.
+   * This can be particularly useful when rendering large canvases on iOS Safari (https://pqina.nl/blog/canvas-area-exceeds-the-maximum-limit/)
+   */
+  export let pixelRatio: 'auto' | number | null = 'auto';
+  /**
+   * User settings for canvas rendering context
+   */
+  export let settings: CanvasRenderingContext2DSettings | undefined = undefined;
   export let className: string;
 
   export const getCanvasElement = (): HTMLCanvasElement => canvas;
@@ -19,9 +35,12 @@
 
   const renderManager = new RenderManager();
   const geometryManager = new GeometryManager();
+  const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
-  let frame: number;
+  let canvasWidth: number;
+  let canvasHeight: number;
+  let maxPixelRatio: number | undefined;
 
   setContext<Context>(KEY, {
     renderManager,
@@ -29,15 +48,21 @@
   });
 
   onMount(() => {
-    renderManager.init(canvas);
-    frame = requestAnimationFrame(() => draw());
-    return () => cancelAnimationFrame(frame);
+    renderManager.init(canvas, settings);
+    return () => renderManager.destroy();
   });
 
-  const draw = () => {
-    if (autoclear) renderManager.clearRect(width, height);
-    renderManager.render();
-    frame = requestAnimationFrame(() => draw());
+  const resize = (node: Element) => {
+    const canvasObserver = new ResizeObserver(([{ contentRect }]) => {
+      canvasWidth = contentRect.width;
+      canvasHeight = contentRect.height;
+    });
+
+    canvasObserver.observe(node);
+
+    return {
+      destroy: () => canvasObserver.disconnect(),
+    };
   };
 
   const handleMouseMoveEvent = (e: MouseEvent) => {
@@ -47,13 +72,66 @@
   const handleEvent = (e: OriginalEvent) => {
     renderManager.handleEvent(e);
   };
+
+  $: _width = width ?? canvasWidth ?? 0;
+  $: _height = height ?? canvasHeight ?? 0;
+
+  /**
+   * If pixelRatio is set to "auto", we will calculate the maximum supported pixel ratio based on the browser and canvas size.
+   * Calculate a new maxPixelRatio each time _width, _height or devicePixelRatio change.
+   */
+  $: if (window.devicePixelRatio && pixelRatio === 'auto') {
+    maxPixelRatio = getMaxPixelRatio(_width, _height, window.devicePixelRatio);
+  } else {
+    maxPixelRatio = undefined;
+  }
+
+  /**
+   * _pixelRatio parameter allows to prevent canvas items from appearing blurry on higher-resolution displays.
+   * This is useful when rendering large canvases on iOS Safari (https://pqina.nl/blog/canvas-area-exceeds-the-maximum-limit/)
+   * To do this, we scale canvas for high resolution displays:
+   * 1. Set the "actual" size of the canvas:
+        canvas.width = Math.floor(_width * _pixelRatio)
+        canvas.height =  Math.floor(_height * _pixelRatio)
+   * 2. Set the "drawn" size of the canvas:
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+   */
+  $: _pixelRatio = maxPixelRatio ?? <number>pixelRatio ?? window.devicePixelRatio ?? 2;
+
+  /**
+   * Update app state each time _width, _height or _pixelRatio values of the canvas change
+   */
+  $: renderManager.canvas = canvas;
+  $: renderManager.width = _width;
+  $: renderManager.height = _height;
+  $: renderManager.pixelRatio = _pixelRatio;
+
+  /**
+   * Adjust canvas's transformation matrix to scale drawings according to the width, height values or device's pixel ratio
+   */
+  $: _width, _height, _pixelRatio, renderManager.redraw();
+
+  /**
+   * Dispatch "resize" event to the parent component each time _width, _height or _pixelRatio values of the canvas change
+   */
+  $: dispatch('resize', {
+    width: _width,
+    height: _height,
+    pixelRatio: _pixelRatio,
+  });
 </script>
 
 <canvas
-  {width}
-  {height}
   class={className}
+  width={Math.floor(_width)}
+  height={Math.floor(_height)}
+  style:width={width ? `${width}px` : '100%'}
+  style:height={height ? `${height}px` : '100%'}
+  use:resize
   bind:this={canvas}
+  bind:clientWidth={canvasWidth}
+  bind:clientHeight={canvasHeight}
   on:click={handleEvent}
   on:mousedown={handleEvent}
   on:mouseup={handleEvent}

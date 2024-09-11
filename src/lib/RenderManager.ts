@@ -1,4 +1,4 @@
-import { createHitCanvas, EventManager, GeometryManager } from './index';
+import { COLORS, createHitCanvas, EventManager, GeometryManager } from './index';
 import {
   type HitCanvasRenderingContext2D,
   type OriginalEvent,
@@ -7,60 +7,83 @@ import {
 } from './types';
 
 export class RenderManager {
-  context: HitCanvasRenderingContext2D | null = null;
+  width?: number;
+  height?: number;
+  pixelRatio?: number;
+  frame?: number;
 
-  hitCanvasObserver: MutationObserver | undefined;
-
-  drawers: Map<LayerId, Render> = new Map();
-
-  activeLayerId: LayerId = 0;
-
+  canvas: HTMLCanvasElement | null;
+  context: HitCanvasRenderingContext2D | null;
   eventManager: EventManager;
-
   geometryManager: GeometryManager;
 
+  drawers: Map<LayerId, Render>;
+  activeLayerId: LayerId;
+  needsRedraw: boolean;
+
   constructor() {
+    this.canvas = null;
+    this.context = null;
     this.eventManager = new EventManager();
     this.geometryManager = new GeometryManager();
+    this.drawers = new Map();
+    this.activeLayerId = 0;
+    this.needsRedraw = true;
+    this.render = this.render.bind(this);
   }
 
-  init(canvas: HTMLCanvasElement) {
-    const hitCanvas = new OffscreenCanvas(canvas.width, canvas.height);
-
-    this.hitCanvasObserver = new MutationObserver(() => {
-      hitCanvas.width = canvas.width;
-      hitCanvas.height = canvas.height;
-    });
-
-    this.hitCanvasObserver.observe(canvas, { attributeFilter: ['width', 'height'] });
-    this.context = createHitCanvas(canvas, hitCanvas);
+  init(canvas: HTMLCanvasElement, contextSettings?: CanvasRenderingContext2DSettings) {
+    this.canvas = canvas;
+    this.context = createHitCanvas(canvas, contextSettings);
+    this.drawBackgroundGrid();
+    this.startRenderLoop();
   }
 
-  addDrawer(layerId: LayerId, render: Render) {
-    this.drawers.set(layerId, render);
+  startRenderLoop() {
+    this.render();
+    this.frame = requestAnimationFrame(() => this.startRenderLoop());
   }
 
-  removeDrawer(layerId: LayerId) {
-    this.drawers.delete(layerId);
-  }
-
+  /**
+   * The main render function which is responsible for drawing, clearing and canvas's transformation matrix adjustment.
+   * */
   render() {
+    /**
+     * Render canvas when width, height or pixelRatio change.
+     */
+    if (!this.needsRedraw) return;
+
+    const context = this.context!;
+    const width = this.width!;
+    const height = this.height!;
+
+    // context.clearRect(0, 0, width, height);
+
     this.drawers.forEach((draw, layerId) => {
-      this.context!.setActiveLayerId(layerId);
-      draw({ ctx: this.context! });
+      context.setActiveLayerId(layerId);
+      draw({ ctx: context });
     });
   }
 
-  clearRect(width: number, height: number) {
-    this.context!.clearRect(0, 0, width, height);
+  /**
+   * Forces canvas's transformation matrix adjustment to scale drawings according to the new width, height or device's pixel ratio.
+   */
+  redraw() {
+    this.needsRedraw = true;
   }
 
+  /**
+   * Handles events on canvas to identify the corresponding layer and then dispatch the event to the Layer component.
+   */
   handleEvent(e: OriginalEvent) {
     const { x, y } = this.geometryManager.calculatePosition(e);
     const layerId = this.context!.getLayerIdAt(x, y);
     this.eventManager.dispatchEvent(e, layerId, { x, y });
   }
 
+  /**
+   * Handles mouse "move" and pointer "enter" events on canvas to identify the corresponding layer and then dispatch the event to the Layer component.
+   */
   handleMouseEnterEvent(e: MouseEvent) {
     const { x, y } = this.geometryManager.calculatePosition(e);
     const layerId = this.context!.getLayerIdAt(x, y);
@@ -85,7 +108,59 @@ export class RenderManager {
     this.activeLayerId = layerId;
   }
 
+  drawBackgroundGrid() {
+    if (!this.context) return;
+
+    const pixelRatio = this.pixelRatio!;
+    const width = 10;
+    const height = 10;
+    const radius = 1;
+    const transform = this.context.getTransform();
+
+    const offscreenCanvas = new OffscreenCanvas(width, height);
+    offscreenCanvas.width = Math.floor(width * pixelRatio);
+    offscreenCanvas.height = Math.floor(height * pixelRatio);
+
+    const offscreenContext = offscreenCanvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    offscreenContext.beginPath();
+    offscreenContext.fillStyle = COLORS.GRID;
+    offscreenContext.arc(1, 1, radius, 0, 2 * Math.PI);
+    offscreenContext.fill();
+
+    const pattern = this.context.createPattern(offscreenCanvas, 'repeat');
+    if (!pattern) return;
+
+    this.context.save();
+
+    // this.context.setTransform(
+    //   pixelRatio,
+    //   transform.b,
+    //   transform.c,
+    //   pixelRatio,
+    //   transform.e,
+    //   transform.f,
+    // );
+
+    this.context.fillStyle = pattern;
+    this.context.fillRect(
+      -transform.e / pixelRatio,
+      -transform.f / pixelRatio,
+      this.width!,
+      this.height!,
+    );
+
+    this.context.restore();
+  }
+
+  addDrawer(layerId: LayerId, render: Render) {
+    this.drawers.set(layerId, render);
+  }
+
+  removeDrawer(layerId: LayerId) {
+    this.drawers.delete(layerId);
+  }
+
   destroy() {
-    this.hitCanvasObserver?.disconnect();
+    cancelAnimationFrame(this.frame!);
   }
 }
