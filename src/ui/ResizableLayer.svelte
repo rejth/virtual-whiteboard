@@ -3,13 +3,25 @@
 
   import Surface from './ResizableLayerSurface.svelte';
   import Handler from './ResizableLayerHandler.svelte';
-  import { type Point, type Context, KEY, W, E, N, S, SURFACE, HANDLERS } from '../lib';
+  import {
+    type Point,
+    type Context,
+    KEY,
+    W,
+    E,
+    N,
+    S,
+    SURFACE,
+    HANDLERS,
+    type Bounds,
+  } from '../lib';
 
-  export let path: Point[];
+  export let path: Point[] | null = null;
+  export let initialBounds: Bounds = { x0: 0, y0: 0, x1: 0, y1: 0 };
 
   const { geometryManager } = getContext<Context>(KEY);
 
-  let { x0, y0, x1, y1 } = geometryManager.getPathBounds(path);
+  let { x0, y0, x1, y1 } = path ? geometryManager.getPathBounds(path) : initialBounds;
   let draggedHandler: number | null = null;
   let hoveredHandler: number | null = null;
   let previousTouch: Touch;

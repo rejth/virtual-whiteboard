@@ -7,9 +7,13 @@ import {
 } from './types';
 
 export class EventManager {
-  currentLayerId: LayerId = 0;
+  currentLayerId: LayerId;
+  eventDispatchers: Map<LayerId, LayerEventDispatcher>;
 
-  eventDispatchers: Map<LayerId, LayerEventDispatcher> = new Map();
+  constructor() {
+    this.currentLayerId = 0;
+    this.eventDispatchers = new Map();
+  }
 
   register(dispatch: LayerEventDispatcher) {
     this.eventDispatchers.set(++this.currentLayerId, dispatch);

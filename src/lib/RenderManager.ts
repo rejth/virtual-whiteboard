@@ -30,6 +30,7 @@ export class RenderManager {
     this.activeLayerId = 0;
     this.needsRedraw = true;
     this.render = this.render.bind(this);
+    this.redraw = this.redraw.bind(this);
   }
 
   init(canvas: HTMLCanvasElement, contextSettings?: CanvasRenderingContext2DSettings) {
@@ -57,12 +58,14 @@ export class RenderManager {
     const width = this.width!;
     const height = this.height!;
 
-    // context.clearRect(0, 0, width, height);
+    context.clearRect(0, 0, width, height);
 
     this.drawers.forEach((draw, layerId) => {
       context.setActiveLayerId(layerId);
       draw({ ctx: context });
     });
+
+    this.needsRedraw = false;
   }
 
   /**

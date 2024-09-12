@@ -271,15 +271,39 @@
       y: 219.01388549804688,
     },
   ];
+
+  let colors = ['#70d6ff', '#ff70a6', '#a56eff'];
+  const sort = (color: string) => colors.sort((a, b) => (a === color ? 1 : b === color ? -1 : 0));
 </script>
 
 <main>
   <Toolbar />
   <Canvas className="canvas" width={window.innerWidth} height={window.innerHeight}>
+    {#each colors as color, i (color)}
+      {@const c = (i + 1) * 85}
+      <ResizableLayer
+        initialBounds={{ x0: c, y0: c, x1: c + 338, y1: c + 338 }}
+        on:mousedown={() => sort(color)}
+        on:touchstart={() => sort(color)}
+        let:bounds
+      >
+        <Layer
+          render={({ ctx }) => {
+            const { x0, y0, x1, y1 } = bounds;
+            console.log(x0, y0);
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = color;
+            ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+            ctx.globalAlpha = 1;
+          }}
+        />
+      </ResizableLayer>
+    {/each}
     <ResizableLayer {path} let:bounds>
       <Layer
         render={({ ctx }) => {
           const { x, y, width, height } = geometry.getRectDimension(bounds);
+          console.log(x, y);
           ctx.globalAlpha = 0.9;
           ctx.fillStyle = '#ffd670';
           ctx.fillRect(x, y, width, height);

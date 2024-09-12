@@ -1,18 +1,5 @@
-import type { HitCanvasRenderingContext2D, LayerId, RGB } from './types';
-
-// https://blog.logrocket.com/guide-javascript-bitwise-operators/#sign-propagating-right-shift
-function convertRGBtoLayerId([r, g, b]: RGB): number {
-  const id = ((r << 16) | (g << 8) | b) / 2;
-  return id % 1 ? 0 : id;
-}
-
-function convertLayerIdToRGB(id: number): RGB {
-  const id2 = id * 2;
-  const r = (id2 >> 16) & 0xff;
-  const g = (id2 >> 8) & 0xff;
-  const b = id2 & 0xff;
-  return [r, g, b];
-}
+import type { HitCanvasRenderingContext2D, LayerId } from './types';
+import { convertLayerIdToRGB, convertRGBtoLayerId } from './utils';
 
 /**
  * Offscreen canvas settings for rendering optimization.
@@ -22,12 +9,15 @@ const settings: CanvasRenderingContext2DSettings = {
 };
 
 /**
- * A list of canvas context setters that we do not need to use on the offscreen canvas, so this allows to optimize rendering.
+ * A list of canvas context setters that we do not need to use on the offscreen canvas, so this allows to optimize rendering significantly.
  * */
 const EXCLUDED_SETTERS: Array<keyof HitCanvasRenderingContext2D> = [
+  'filter',
   'shadowBlur',
   'globalCompositeOperation',
   'globalAlpha',
+  'fillStyle',
+  'strokeStyle',
 ];
 
 /**

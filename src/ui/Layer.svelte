@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getContext, onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import { getContext, onMount, onDestroy, createEventDispatcher, afterUpdate } from 'svelte';
   import { type Render, type LayerEvents, type Context, KEY } from '../lib';
 
   export let render: Render;
@@ -18,4 +18,6 @@
     unregister();
     renderManager.removeDrawer(id);
   });
+
+  afterUpdate(renderManager.redraw);
 </script>
