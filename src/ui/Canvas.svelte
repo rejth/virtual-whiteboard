@@ -28,27 +28,28 @@
    * User settings for canvas rendering context
    */
   export let settings: CanvasRenderingContext2DSettings | undefined = undefined;
-  export let className: string;
+  export let className = '';
+  export let style = '';
 
   export const getCanvasElement = (): HTMLCanvasElement => canvas;
   export const getCanvasContext = (): HitCanvasRenderingContext2D | null => renderManager.context;
 
   const renderManager = new RenderManager();
-  const geometryManager = new GeometryManager();
+  const { geometryManager } = renderManager;
+
   const dispatch = createEventDispatcher();
 
   let canvas: HTMLCanvasElement;
+  let backgroundCanvas: HTMLCanvasElement;
   let canvasWidth: number;
   let canvasHeight: number;
   let maxPixelRatio: number | undefined;
 
-  setContext<Context>(KEY, {
-    renderManager,
-    geometryManager,
-  });
+  setContext<Context>(KEY, { renderManager });
 
   onMount(() => {
     renderManager.init(canvas, settings);
+    renderManager.drawBackgroundGrid(backgroundCanvas);
     return () => renderManager.destroy();
   });
 
@@ -106,6 +107,7 @@
   $: renderManager.width = _width;
   $: renderManager.height = _height;
   $: renderManager.pixelRatio = _pixelRatio;
+  $: geometryManager.pixelRatio = _pixelRatio;
 
   /**
    * Adjust canvas's transformation matrix to scale drawings according to the width, height values or device's pixel ratio
@@ -122,41 +124,75 @@
   });
 </script>
 
-<canvas
-  class={className}
-  width={Math.floor(_width)}
-  height={Math.floor(_height)}
-  style:width={width ? `${width}px` : '100%'}
-  style:height={height ? `${height}px` : '100%'}
-  use:resize
-  bind:this={canvas}
-  bind:clientWidth={canvasWidth}
-  bind:clientHeight={canvasHeight}
-  on:click={handleEvent}
-  on:mousedown={handleEvent}
-  on:mouseup={handleEvent}
-  on:mouseenter={handleEvent}
-  on:mouseleave={handleEvent}
-  on:mousemove={handleMouseMoveEvent}
-  on:pointerdown={handleEvent}
-  on:pointerup={handleEvent}
-  on:pointerenter={handleMouseMoveEvent}
-  on:pointerleave={handleEvent}
-  on:pointermove={handleEvent}
-  on:pointercancel={handleEvent}
-  on:touchstart={handleEvent}
-  on:touchend={handleEvent}
-  on:touchmove={handleEvent}
-  on:touchcancel={handleEvent}
-  on:contextmenu
-  on:wheel
-  on:drag
-  on:dragend
-  on:dragenter
-  on:dragstart
-  on:dragleave
-  on:dragover
-  on:drop
-/>
+<div class="canvas-wrapper">
+  <canvas
+    class={`canvas ${className}`}
+    width={Math.floor(_width)}
+    height={Math.floor(_height)}
+    style:width={width ? `${width}px` : '100%'}
+    style:height={height ? `${height}px` : '100%'}
+    {style}
+    use:resize
+    bind:this={canvas}
+    bind:clientWidth={canvasWidth}
+    bind:clientHeight={canvasHeight}
+    on:click={handleEvent}
+    on:mousedown={handleEvent}
+    on:mouseup={handleEvent}
+    on:mouseenter={handleEvent}
+    on:mouseleave={handleEvent}
+    on:mousemove={handleMouseMoveEvent}
+    on:pointerdown={handleEvent}
+    on:pointerup={handleEvent}
+    on:pointerenter={handleMouseMoveEvent}
+    on:pointerleave={handleEvent}
+    on:pointermove={handleEvent}
+    on:pointercancel={handleEvent}
+    on:touchstart={handleEvent}
+    on:touchend={handleEvent}
+    on:touchmove={handleEvent}
+    on:touchcancel={handleEvent}
+    on:contextmenu
+    on:wheel
+    on:drag
+    on:dragend
+    on:dragenter
+    on:dragstart
+    on:dragleave
+    on:dragover
+    on:drop
+  />
+  <canvas
+    class="background-canvas"
+    width={Math.floor(_width)}
+    height={Math.floor(_height)}
+    style:width={width ? `${width}px` : '100%'}
+    style:height={height ? `${height}px` : '100%'}
+    bind:this={backgroundCanvas}
+  />
+  <slot />
+</div>
 
-<slot />
+<style>
+  .canvas-wrapper {
+    position: relative;
+  }
+
+  .canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+
+  .background-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    touch-action: none;
+    user-select: none;
+    cursor: none;
+    z-index: -1;
+  }
+</style>

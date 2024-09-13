@@ -36,7 +36,6 @@ export class RenderManager {
   init(canvas: HTMLCanvasElement, contextSettings?: CanvasRenderingContext2DSettings) {
     this.canvas = canvas;
     this.context = createHitCanvas(canvas, contextSettings);
-    this.drawBackgroundGrid();
     this.startRenderLoop();
   }
 
@@ -62,7 +61,7 @@ export class RenderManager {
 
     this.drawers.forEach((draw, layerId) => {
       context.setActiveLayerId(layerId);
-      draw({ ctx: context });
+      draw({ ctx: context, geometry: this.geometryManager });
     });
 
     this.needsRedraw = false;
@@ -111,48 +110,34 @@ export class RenderManager {
     this.activeLayerId = layerId;
   }
 
-  drawBackgroundGrid() {
-    if (!this.context) return;
-
-    const pixelRatio = this.pixelRatio!;
+  drawBackgroundGrid(backgroundCanvas: HTMLCanvasElement) {
     const width = 10;
     const height = 10;
     const radius = 1;
-    const transform = this.context.getTransform();
+    const scale = this.pixelRatio!;
 
-    const offscreenCanvas = new OffscreenCanvas(width, height);
-    offscreenCanvas.width = Math.floor(width * pixelRatio);
-    offscreenCanvas.height = Math.floor(height * pixelRatio);
+    const context = backgroundCanvas.getContext('2d')!;
+    const transform = context.getTransform();
 
-    const offscreenContext = offscreenCanvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    const canvas = new OffscreenCanvas(width, height);
+    canvas.width = Math.floor(width * scale);
+    canvas.height = Math.floor(height * scale);
+
+    const offscreenContext = canvas.getContext('2d')!;
     offscreenContext.beginPath();
     offscreenContext.fillStyle = COLORS.GRID;
     offscreenContext.arc(1, 1, radius, 0, 2 * Math.PI);
     offscreenContext.fill();
 
-    const pattern = this.context.createPattern(offscreenCanvas, 'repeat');
+    const pattern = context.createPattern(canvas, 'repeat');
     if (!pattern) return;
 
-    this.context.save();
+    context.save();
+    context.setTransform(1, transform.b, transform.c, 1, transform.e, transform.f);
 
-    // this.context.setTransform(
-    //   pixelRatio,
-    //   transform.b,
-    //   transform.c,
-    //   pixelRatio,
-    //   transform.e,
-    //   transform.f,
-    // );
-
-    this.context.fillStyle = pattern;
-    this.context.fillRect(
-      -transform.e / pixelRatio,
-      -transform.f / pixelRatio,
-      this.width!,
-      this.height!,
-    );
-
-    this.context.restore();
+    context.fillStyle = pattern;
+    context.fillRect(-transform.e / scale, -transform.f / scale, this.width!, this.height!);
+    context.restore();
   }
 
   addDrawer(layerId: LayerId, render: Render) {

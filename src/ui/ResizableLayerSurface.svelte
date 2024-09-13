@@ -7,7 +7,8 @@
   export let bounds: Bounds;
   export let active: boolean;
 
-  const { geometryManager } = getContext<Context>(KEY);
+  const { renderManager } = getContext<Context>(KEY);
+  const { geometryManager } = renderManager;
 
   $: render = ({ ctx }: RenderProps) => {
     if (!ctx) return;

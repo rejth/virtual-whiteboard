@@ -8,7 +8,8 @@
 
   export let text: string;
 
-  const { geometryManager } = getContext<Context>(KEY);
+  const { renderManager } = getContext<Context>(KEY);
+  const { geometryManager } = renderManager;
 
   let selectedPoint: number | null = null;
   let controlPoints: Point[] = [

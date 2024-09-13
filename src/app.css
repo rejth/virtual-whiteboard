@@ -204,21 +204,11 @@
 }
 
 html {
-  overscroll-behavior-x: none;
-  overscroll-behavior-y: none;
   overscroll-behavior: contain;
-  height: 100%;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  height: 100%;
-  min-height: 100vh;
-  overscroll-behavior-x: none;
-  overscroll-behavior-y: none;
   overscroll-behavior: contain;
 }
 
@@ -234,7 +224,6 @@ h1 h2 h3 h4 h5 h6 p {
 }
 
 p {
-  line-height: 1.5;
   margin: 0;
 }
 
@@ -287,12 +276,5 @@ ul {
 
 #app {
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
-}
-
-@media (min-width: 720px) {
-  h1 {
-    font-size: 2.4rem;
-  }
 }

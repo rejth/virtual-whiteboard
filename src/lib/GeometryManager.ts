@@ -1,7 +1,13 @@
 import type { OriginalEvent, Bounds, Point, RectDimension } from './types';
 
 export class GeometryManager {
-  defaultPoint: Point = { x: 0, y: 0 };
+  pixelRatio: number;
+  defaultPoint: Point;
+
+  constructor() {
+    this.pixelRatio = 1;
+    this.defaultPoint = { x: 0, y: 0 };
+  }
 
   getMousePosition(e: MouseEvent | PointerEvent, rect: DOMRect): Point {
     return {

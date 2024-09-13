@@ -19,7 +19,8 @@
   export let path: Point[] | null = null;
   export let initialBounds: Bounds = { x0: 0, y0: 0, x1: 0, y1: 0 };
 
-  const { geometryManager } = getContext<Context>(KEY);
+  const { renderManager } = getContext<Context>(KEY);
+  const { geometryManager } = renderManager;
 
   let { x0, y0, x1, y1 } = path ? geometryManager.getPathBounds(path) : initialBounds;
   let draggedHandler: number | null = null;

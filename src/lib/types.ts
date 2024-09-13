@@ -3,7 +3,6 @@ import type { GeometryManager, RenderManager } from './index';
 
 export type Context = {
   renderManager: RenderManager;
-  geometryManager: GeometryManager;
 };
 
 export type LayerId = number;
@@ -20,7 +19,10 @@ export interface HitCanvasRenderingContext2D extends Omit<CanvasRenderingContext
   setActiveLayerId: (id: LayerId) => void;
 }
 
-export type RenderProps = { ctx: HitCanvasRenderingContext2D };
+export type RenderProps = {
+  ctx: HitCanvasRenderingContext2D;
+  geometry: GeometryManager;
+};
 
 export interface Render {
   (props: RenderProps): void;

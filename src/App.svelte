@@ -2,12 +2,9 @@
   import Canvas from './ui/Canvas.svelte';
   import ResizableLayer from './ui/ResizableLayer.svelte';
   import Layer from './ui/Layer.svelte';
-  import { GeometryManager } from './lib';
   import Zoom from './ui/Zoom/Zoom.svelte';
   import UndoRedo from './ui/UndoRedo/UndoRedo.svelte';
   import Toolbar from './ui/Toolbar/Toolbar.svelte';
-
-  const geometry = new GeometryManager();
 
   const path = [
     {
@@ -278,11 +275,11 @@
 
 <main>
   <Toolbar />
-  <Canvas className="canvas" width={window.innerWidth} height={window.innerHeight}>
+  <Canvas width={window.innerWidth} height={window.innerHeight}>
     {#each colors as color, i (color)}
       {@const c = (i + 1) * 85}
       <ResizableLayer
-        initialBounds={{ x0: c, y0: c, x1: c + 338, y1: c + 338 }}
+        initialBounds={{ x0: c, y0: c, x1: c + 180, y1: c + 180 }}
         on:mousedown={() => sort(color)}
         on:touchstart={() => sort(color)}
         let:bounds
@@ -290,7 +287,6 @@
         <Layer
           render={({ ctx }) => {
             const { x0, y0, x1, y1 } = bounds;
-            console.log(x0, y0);
             ctx.globalAlpha = 0.9;
             ctx.fillStyle = color;
             ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
@@ -301,9 +297,8 @@
     {/each}
     <ResizableLayer {path} let:bounds>
       <Layer
-        render={({ ctx }) => {
+        render={({ ctx, geometry }) => {
           const { x, y, width, height } = geometry.getRectDimension(bounds);
-          console.log(x, y);
           ctx.globalAlpha = 0.9;
           ctx.fillStyle = '#ffd670';
           ctx.fillRect(x, y, width, height);
