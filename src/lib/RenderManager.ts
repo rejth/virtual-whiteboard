@@ -4,6 +4,10 @@ import {
   type OriginalEvent,
   type Render,
   type LayerId,
+  type Point,
+  type LayerEventDetails,
+  type CanvasEvents,
+  type LayerEventDispatcher,
 } from './types';
 
 export class RenderManager {
@@ -57,6 +61,8 @@ export class RenderManager {
     const width = this.width!;
     const height = this.height!;
 
+    // TODO: replace "1" with pixelRatio
+    context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, width, height);
 
     this.drawers.forEach((draw, layerId) => {
@@ -74,40 +80,56 @@ export class RenderManager {
     this.needsRedraw = true;
   }
 
-  /**
-   * Handles events on canvas to identify the corresponding layer and then dispatch the event to the Layer component.
-   */
-  handleEvent(e: OriginalEvent) {
-    const { x, y } = this.geometryManager.calculatePosition(e);
-    const layerId = this.context!.getLayerIdAt(x, y);
-    this.eventManager.dispatchEvent(e, layerId, { x, y });
+  addDrawer(layerId: LayerId, render: Render) {
+    this.drawers.set(layerId, render);
+  }
+
+  removeDrawer(layerId: LayerId) {
+    this.drawers.delete(layerId);
   }
 
   /**
-   * Handles mouse "move" and pointer "enter" events on canvas to identify the corresponding layer and then dispatch the event to the Layer component.
+   * Handles "mousemove", "pointermove" and "touchstart" events on canvas to identify the corresponding layer and then dispatch the event to the Layer component.
    */
-  handleMouseEnterEvent(e: MouseEvent) {
-    const { x, y } = this.geometryManager.calculatePosition(e);
-    const layerId = this.context!.getLayerIdAt(x, y);
+
+  setActiveLayer(e: OriginalEvent) {
+    const point = this.geometryManager.calculatePosition(e);
+    const layerId = this.context!.getLayerIdAt(point.x, point.y);
 
     if (this.activeLayerId === layerId) return;
 
-    let pointerEvent: PointerEvent;
-    let mouseEvent: MouseEvent;
-
-    if (layerId) {
-      this.activeLayerId = layerId;
-      pointerEvent = new PointerEvent('pointerenter', e);
-      mouseEvent = new MouseEvent('mouseenter', e);
-    } else {
-      pointerEvent = new PointerEvent('pointerleave', e);
-      mouseEvent = new MouseEvent('mouseleave', e);
+    if (e instanceof MouseEvent) {
+      this.eventManager.dispatchEvent(this.activeLayerId, {
+        originalEvent: new PointerEvent('pointerleave', e),
+        ...point,
+      });
+      this.eventManager.dispatchEvent(this.activeLayerId, {
+        originalEvent: new MouseEvent('mouseleave', e),
+        ...point,
+      });
     }
 
-    this.eventManager.dispatchEvent(pointerEvent, this.activeLayerId, { x, y });
-    this.eventManager.dispatchEvent(mouseEvent, this.activeLayerId, { x, y });
-
     this.activeLayerId = layerId;
+
+    if (e instanceof MouseEvent) {
+      this.eventManager.dispatchEvent(this.activeLayerId, {
+        originalEvent: new PointerEvent('pointerenter', e),
+        ...point,
+      });
+      this.eventManager.dispatchEvent(this.activeLayerId, {
+        originalEvent: new MouseEvent('mouseenter', e),
+        ...point,
+      });
+    }
+  }
+
+  /**
+   * Handles events on canvas and then dispatch the event to the Layer component.
+   */
+  dispatchEvent(e: OriginalEvent) {
+    if (!this.activeLayerId) return;
+    const point = this.geometryManager.calculatePosition(e);
+    this.eventManager.dispatchEvent(this.activeLayerId, { originalEvent: e, ...point });
   }
 
   drawBackgroundGrid(backgroundCanvas: HTMLCanvasElement) {
@@ -133,19 +155,12 @@ export class RenderManager {
     if (!pattern) return;
 
     context.save();
+    // TODO: replace "1" with scale
     context.setTransform(1, transform.b, transform.c, 1, transform.e, transform.f);
 
     context.fillStyle = pattern;
     context.fillRect(-transform.e / scale, -transform.f / scale, this.width!, this.height!);
     context.restore();
-  }
-
-  addDrawer(layerId: LayerId, render: Render) {
-    this.drawers.set(layerId, render);
-  }
-
-  removeDrawer(layerId: LayerId) {
-    this.drawers.delete(layerId);
   }
 
   destroy() {

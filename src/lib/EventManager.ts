@@ -1,22 +1,21 @@
 import {
   type CanvasEvents,
+  type LayerEventDetails,
   type LayerEventDispatcher,
   type LayerId,
-  type OriginalEvent,
-  type Point,
 } from './types';
 
 export class EventManager {
   currentLayerId: LayerId;
-  eventDispatchers: Map<LayerId, LayerEventDispatcher>;
+  dispatchers: Map<LayerId, LayerEventDispatcher>;
 
   constructor() {
     this.currentLayerId = 0;
-    this.eventDispatchers = new Map();
+    this.dispatchers = new Map();
   }
 
   register(dispatch: LayerEventDispatcher) {
-    this.eventDispatchers.set(++this.currentLayerId, dispatch);
+    this.dispatchers.set(++this.currentLayerId, dispatch);
 
     return {
       id: this.currentLayerId,
@@ -25,12 +24,11 @@ export class EventManager {
   }
 
   unregister(layerId: LayerId): boolean {
-    return this.eventDispatchers.delete(layerId);
+    return this.dispatchers.delete(layerId);
   }
 
-  dispatchEvent(e: OriginalEvent, layerId: LayerId, point: Point) {
-    if (!layerId) return;
-    const dispatch = this.eventDispatchers.get(layerId);
-    dispatch?.(<CanvasEvents>e.type, { originalEvent: e, ...point });
+  dispatchEvent(layerId: LayerId, details: LayerEventDetails) {
+    const dispatch = this.dispatchers.get(layerId);
+    dispatch?.(<CanvasEvents>details.originalEvent.type, details);
   }
 }

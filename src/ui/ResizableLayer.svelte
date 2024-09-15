@@ -3,21 +3,14 @@
 
   import Surface from './ResizableLayerSurface.svelte';
   import Handler from './ResizableLayerHandler.svelte';
-  import {
-    type Point,
-    type Context,
-    KEY,
-    W,
-    E,
-    N,
-    S,
-    SURFACE,
-    HANDLERS,
-    type Bounds,
-  } from '../lib';
+  import { type Point, type Context, KEY, type Bounds } from '../lib';
 
   export let path: Point[] | null = null;
   export let initialBounds: Bounds = { x0: 0, y0: 0, x1: 0, y1: 0 };
+
+  const [N, S, W, E] = [1, 2, 4, 8];
+  const HANDLERS = [N, S, W, E, N | W, N | E, S | W, S | E];
+  const SURFACE = N | S | W | E;
 
   const { renderManager } = getContext<Context>(KEY);
   const { geometryManager } = renderManager;
@@ -79,6 +72,7 @@
   on:mouseup={onMouseUp}
   on:touchstart={onTouchStart}
   on:touchmove={onTouchMove}
+  on:pointerdown={onMouseUp}
 />
 
 <slot {bounds} />
@@ -89,7 +83,12 @@
   on:mouseleave={onMouseLeave}
   on:mouseenter={onSurfaceMouseEnter}
   on:mousedown={onSurfaceMouseDown}
-  on:touchstart={onSurfaceMouseDown}
+  on:touchstart={(e) => {
+    e.detail.originalEvent.preventDefault();
+    onSurfaceMouseDown();
+  }}
+  on:mousedown
+  on:touchstart
 />
 
 {#if active}
@@ -100,7 +99,12 @@
       on:mouseleave={onMouseLeave}
       on:mouseenter={() => onHandlerMouseEnter(handler)}
       on:mousedown={() => onHandlerMouseDown(handler)}
-      on:touchstart={() => onHandlerMouseDown(handler)}
+      on:touchstart={(e) => {
+        e.detail.originalEvent.preventDefault();
+        onHandlerMouseDown(handler);
+      }}
+      on:mousedown
+      on:touchstart
     />
   {/each}
 {/if}

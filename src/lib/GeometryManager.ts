@@ -9,10 +9,10 @@ export class GeometryManager {
     this.defaultPoint = { x: 0, y: 0 };
   }
 
-  getMousePosition(e: MouseEvent | PointerEvent, rect: DOMRect): Point {
+  getMousePosition(e: MouseEvent): Point {
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: e.offsetX,
+      y: e.offsetY,
     };
   }
 
@@ -35,12 +35,11 @@ export class GeometryManager {
   }
 
   calculatePosition(e: OriginalEvent): Point {
-    const rect = (<Element>e.target).getBoundingClientRect();
-
     if (window.TouchEvent && e instanceof TouchEvent) {
+      const rect = (<Element>e.target).getBoundingClientRect();
       return this.getTouchPosition(e, rect);
-    } else if (e instanceof MouseEvent || e instanceof PointerEvent) {
-      return this.getMousePosition(e, rect);
+    } else if (e instanceof MouseEvent) {
+      return this.getMousePosition(e);
     }
 
     return this.defaultPoint;

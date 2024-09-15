@@ -66,12 +66,17 @@
     };
   };
 
-  const handleMouseMoveEvent = (e: MouseEvent) => {
-    renderManager.handleMouseEnterEvent(e);
+  const handleLayerMouseMove = (e: MouseEvent) => {
+    renderManager.setActiveLayer(e);
+  };
+
+  const handleLayerTouchStart = (e: TouchEvent) => {
+    renderManager.setActiveLayer(e);
+    renderManager.dispatchEvent(e);
   };
 
   const handleEvent = (e: OriginalEvent) => {
-    renderManager.handleEvent(e);
+    renderManager.dispatchEvent(e);
   };
 
   $: _width = width ?? canvasWidth ?? 0;
@@ -136,23 +141,44 @@
     bind:this={canvas}
     bind:clientWidth={canvasWidth}
     bind:clientHeight={canvasHeight}
+    on:mousemove={handleLayerMouseMove}
+    on:pointermove={handleLayerMouseMove}
+    on:touchstart={handleLayerTouchStart}
     on:click={handleEvent}
+    on:contextmenu={handleEvent}
+    on:dblclick={handleEvent}
     on:mousedown={handleEvent}
     on:mouseup={handleEvent}
-    on:mouseenter={handleEvent}
-    on:mouseleave={handleEvent}
-    on:mousemove={handleMouseMoveEvent}
-    on:pointerdown={handleEvent}
-    on:pointerup={handleEvent}
-    on:pointerenter={handleMouseMoveEvent}
-    on:pointerleave={handleEvent}
-    on:pointermove={handleEvent}
-    on:pointercancel={handleEvent}
-    on:touchstart={handleEvent}
+    on:wheel={handleEvent}
+    on:touchcancel={handleEvent}
     on:touchend={handleEvent}
     on:touchmove={handleEvent}
-    on:touchcancel={handleEvent}
+    on:pointerdown={handleEvent}
+    on:pointerup={handleEvent}
+    on:pointercancel={handleEvent}
+    on:focus
+    on:blur
+    on:fullscreenchange
+    on:fullscreenerror
+    on:scroll
+    on:cut
+    on:copy
+    on:paste
+    on:keydown
+    on:keypress
+    on:keyup
+    on:auxclick
+    on:click
     on:contextmenu
+    on:dblclick
+    on:mousedown
+    on:mouseenter
+    on:mouseleave
+    on:mousemove
+    on:mouseover
+    on:mouseout
+    on:mouseup
+    on:select
     on:wheel
     on:drag
     on:dragend
@@ -161,6 +187,20 @@
     on:dragleave
     on:dragover
     on:drop
+    on:touchcancel
+    on:touchend
+    on:touchmove
+    on:touchstart
+    on:pointerover
+    on:pointerenter
+    on:pointerdown
+    on:pointermove
+    on:pointerup
+    on:pointercancel
+    on:pointerout
+    on:pointerleave
+    on:gotpointercapture
+    on:lostpointercapture
   />
   <canvas
     class="background-canvas"

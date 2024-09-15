@@ -269,8 +269,9 @@
     },
   ];
 
-  let colors = ['#70d6ff', '#ff70a6', '#a56eff'];
-  const sort = (color: string) => colors.sort((a, b) => (a === color ? 1 : b === color ? -1 : 0));
+  let colors = ['tomato', 'goldenrod', 'mediumturquoise'];
+  const sort = (color: string) =>
+    (colors = colors.sort((a, b) => (a === color ? 1 : b === color ? -1 : 0)));
 </script>
 
 <main>

@@ -28,7 +28,7 @@ export interface Render {
   (props: RenderProps): void;
 }
 
-export type OriginalEvent = MouseEvent | PointerEvent | TouchEvent;
+export type OriginalEvent = MouseEvent | TouchEvent;
 
 export type CanvasEvents =
   | 'click'
