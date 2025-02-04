@@ -5,7 +5,11 @@
   import { COLORS, COLOR_LIST } from 'client/shared/constants';
   import { canvasStore } from 'client/ui/Canvas/store';
 
-  export let anchor: BaseCanvasEntity<RectDrawOptions>;
+  interface Props {
+    anchor: BaseCanvasEntity<RectDrawOptions>;
+  }
+
+  let { anchor }: Props = $props();
 
   const handleColorChange = (value: Color['value']) => {
     canvasStore.updateShape(anchor.id, { color: value as COLORS });
@@ -19,16 +23,16 @@
       role="button"
       class="icon color"
       style:background-color={value}
-      on:click={() => handleColorChange(value)}
-      on:keydown={() => handleColorChange(value)}
+      onclick={() => handleColorChange(value)}
+      onkeydown={() => handleColorChange(value)}
     ></span>
   {/each}
   <span
     tabindex="0"
     role="button"
     class="icon color transparent"
-    on:click={() => handleColorChange('transparent')}
-    on:keydown={() => handleColorChange('transparent')}
+    onclick={() => handleColorChange('transparent')}
+    onkeydown={() => handleColorChange('transparent')}
   ></span>
 </div>
 

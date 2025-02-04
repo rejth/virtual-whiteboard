@@ -1,4 +1,5 @@
 import canvasSize from 'canvas-size';
+import type { PixelRatio } from 'core/interfaces';
 
 export function getMaxPixelRatio(
   width: number,
@@ -18,3 +19,20 @@ export function getMaxPixelRatio(
 
   return target;
 }
+
+export function getPixelRatio(
+  pixelRatio: PixelRatio | 'auto' | undefined,
+  devicePixelRatio: number,
+  width: number,
+  height: number,
+) {
+  if (pixelRatio === 'auto') {
+    return getMaxPixelRatio(width, height, devicePixelRatio);
+  }
+  if (pixelRatio && typeof pixelRatio === 'number') {
+    return pixelRatio;
+  }
+  return devicePixelRatio;
+}
+
+export const warn = (message: string) => console.warn('[svelte-canvas] %s', message);

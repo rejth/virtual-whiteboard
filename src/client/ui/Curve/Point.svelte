@@ -1,22 +1,24 @@
 <script lang="ts">
-  import type { Point, RenderProps } from 'core/interfaces';
+  import type { Point } from 'core/interfaces';
+  import { type LayerEventHandlers, type RenderProps } from 'core/services';
   import { Layer } from 'core/ui';
 
   import { COLORS } from 'client/shared/constants';
 
-  export let point: Point;
-  export let active: boolean = false;
+  interface Props {
+    point: Point;
+    active?: boolean;
+  }
 
-  const radius = 5;
+  let { point, active = false, ...eventHandlers }: Props & LayerEventHandlers = $props();
 
-  $: render = ({ renderer }: RenderProps) => {
+  let render = $derived(({ renderer }: RenderProps) => {
     renderer.fillCircle({
-      x: point.x,
-      y: point.y,
-      radius,
+      ...point,
+      radius: 5,
       color: active ? COLORS.SELECTION : '#000',
     });
-  };
+  });
 </script>
 
-<Layer {render} on:mouseenter on:mouseleave on:mousedown on:mouseup on:touchstart on:touchend />
+<Layer {render} {...eventHandlers} />

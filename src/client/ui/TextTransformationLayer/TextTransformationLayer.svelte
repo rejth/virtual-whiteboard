@@ -1,24 +1,28 @@
 <script lang="ts">
   import type { Point } from 'core/interfaces';
 
+  import { type CurveLayerEventDetails } from 'client/ui/Curve/interfaces';
   import BezierCurve from 'client/ui/Curve/BezierCurve.svelte';
   import ControlPoints from 'client/ui/Curve/ControlPoints.svelte';
-  import { type CurveLayerEventDetails } from 'client/ui/Curve/interfaces';
 
   import Text from './Text.svelte';
 
-  export let text: string;
+  interface Props {
+    text: string;
+  }
 
-  let controlPoints: Point[] = [
+  let { text }: Props = $props();
+
+  let controlPoints: Point[] = $state([
     { x: 100, y: 300 },
     { x: 200, y: 200 },
     { x: 300, y: 200 },
     { x: 400, y: 300 },
-  ];
+  ]);
 
-  const handleCurvePointMove = (e: CustomEvent<CurveLayerEventDetails>) => {
-    if (!e.detail) return;
-    controlPoints[e.detail.index] = e.detail.point;
+  const handleCurvePointMove = (details: CurveLayerEventDetails) => {
+    if (!details) return;
+    controlPoints[details.index] = details.point;
   };
 
   const getBezierPoint = (t: number, points: Point[]) => {
@@ -60,12 +64,12 @@
     });
   };
 
-  $: pathPoints = getTextPathPoints(controlPoints, text.length);
+  let pathPoints = $derived(getTextPathPoints(controlPoints, text.length));
 </script>
 
 <Text {text} {pathPoints} />
 
-<ControlPoints {controlPoints} on:point.move={handleCurvePointMove}>
+<ControlPoints {controlPoints} onpointmove={handleCurvePointMove}>
   <BezierCurve
     start={controlPoints[0]}
     cp1={controlPoints[1]}

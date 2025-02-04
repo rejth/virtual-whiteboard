@@ -69,4 +69,4 @@
   };
 </script>
 
-<svelte:document on:keydown={handleKeyDown} on:keyup={handleKeyUp} />
+<svelte:document onkeydown={handleKeyDown} onkeyup={handleKeyUp} />

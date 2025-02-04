@@ -1,8 +1,14 @@
-import type { Bounds, CanvasContextType, LayerEventDetails, Point } from 'core/interfaces';
-import { geometryManager, type LayerManager, type Renderer } from 'core/services';
+import type { Bounds, Point } from 'core/interfaces';
+import {
+  geometryManager,
+  type CanvasContext,
+  type LayerEvent,
+  type LayerManager,
+  type Renderer,
+} from 'core/services';
 
 export class Camera {
-  ctx: CanvasContextType | null;
+  ctx: CanvasContext | null;
   renderer: Renderer | null;
   layerManager: LayerManager | null;
 
@@ -26,7 +32,7 @@ export class Camera {
     this.handleWheelChange = this.handleWheelChange.bind(this);
   }
 
-  init(context: CanvasContextType | null) {
+  init(context: CanvasContext | null) {
     this.ctx = context;
   }
 
@@ -59,7 +65,7 @@ export class Camera {
     return this.renderer.getTransformedPoint(point.x, point.y);
   }
 
-  handleLayerDoubleClick(e: LayerEventDetails, layerBounds: Bounds): Point {
+  handleLayerDoubleClick(e: LayerEvent, layerBounds: Bounds): Point {
     if (!this.renderer) return { x: e.x, y: e.y };
 
     const { pageX, pageY } = e.originalEvent as MouseEvent;

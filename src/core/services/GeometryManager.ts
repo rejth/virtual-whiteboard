@@ -1,5 +1,4 @@
 import type {
-  OriginalEvent,
   Bounds,
   Point,
   RectDimension,
@@ -16,7 +15,7 @@ class GeometryManager {
     this.defaultPoint = { x: 0, y: 0 };
   }
 
-  calculatePosition(e: OriginalEvent, pixelRatio: PixelRatio = 1): Point {
+  calculatePosition(e: MouseEvent | TouchEvent, pixelRatio: PixelRatio = 1): Point {
     if (window.TouchEvent && e instanceof TouchEvent) {
       return this.#getTouchPosition(e, pixelRatio);
     } else if (e instanceof MouseEvent) {

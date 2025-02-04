@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount, type ComponentType } from 'svelte';
+  import { onMount } from 'svelte';
 
   import type { Point } from 'core/interfaces';
-  import { type Camera } from 'core/services';
+  import { type Camera, type LayerEvent } from 'core/services';
   import { dndWatcher } from 'core/lib';
   import { Canvas } from 'core/ui';
 
@@ -18,7 +18,7 @@
   import Connection from 'client/ui/Connection/Connection.svelte';
   import TextEditor from 'client/ui/TextEditor/TextEditor.svelte';
   import ResizableLayer from 'client/ui/ResizableLayer/ResizableLayer.svelte';
-  import type { ResizableLayerEventDetails } from 'client/ui/ResizableLayer/interfaces';
+  import type { ResizableLayerEventData } from 'client/ui/ResizableLayer/interfaces';
 
   import { canvasStore } from 'client/ui/Canvas/store';
   import { toolbarStore } from 'client/ui/Toolbar/store';
@@ -27,102 +27,100 @@
   import 'client/shared/styles/_global.css';
 
   let canvas: Canvas;
-  let camera: Camera;
-  let selection: Point[] = [];
+  let camera: Camera | null = $state(null);
+  let selection: Point[] = $state([]);
   let isLayerEntered = false;
 
   const { tool } = toolbarStore;
   const { shapes, selectionPath, textEditor, clickOutsideExcludedIds, isSelected } = canvasStore;
   const { currentConnection, connections } = connectionStore;
 
-  $: connection = $tool === Tools.CONNECT;
-  $: panning = $tool === Tools.PAN;
-  $: cursorStyle = panning ? `cursor: ${CURSORS.HAND}` : ``;
-  $: selection = $selectionPath.length > 0 ? $selectionPath : selection;
+  let connection = $derived($tool === Tools.CONNECT);
+  let panning = $derived($tool === Tools.PAN);
+  let cursorStyle = $derived(panning ? `cursor: ${CURSORS.HAND}` : ``);
+
+  $effect(() => {
+    selection = $selectionPath.length > 0 ? $selectionPath : selection;
+  });
 
   onMount(async () => {
     camera = canvas.getCamera();
 
-    const ref = canvas.getCanvasElement();
+    const ref = canvas.canvas;
     const rect = ref.getBoundingClientRect();
     const selectionWatcher = dndWatcher(ref);
 
     for await (const e of selectionWatcher) {
-      const transformedPoint = camera.handleCanvasClick(<MouseEvent>e);
-      canvasStore.dragSelection(<MouseEvent>e, rect, transformedPoint);
+      const transformedPoint = camera?.handleCanvasClick(e as MouseEvent);
+      canvasStore.dragSelection(e as MouseEvent, rect, transformedPoint!);
     }
   });
 
-  const handleCanvasClick = (e: MouseEvent) => {
+  const handleCanvasClick = (e: Event) => {
     if ($isSelected) return;
-    const transformedPoint = camera.handleCanvasClick(e);
+    const transformedPoint = camera?.handleCanvasClick(e as MouseEvent);
 
-    canvasStore.addShape(e, transformedPoint);
+    canvasStore.addShape(e as MouseEvent, transformedPoint!);
     selection = $selectionPath;
     canvasStore.resetSelection();
   };
 
-  const handleCanvasMouseDown = (e: MouseEvent) => {
+  const handleCanvasMouseDown = (e: Event) => {
     if (!panning) return;
-    camera.handleMouseDown(e);
+    camera?.handleMouseDown(e as MouseEvent);
   };
 
-  const handleCanvasMouseUp = (e: MouseEvent) => {
+  const handleCanvasMouseUp = (e: Event) => {
     if (!panning) return;
-    camera.handleMouseUp(e);
+    camera?.handleMouseUp(e as MouseEvent);
   };
 
-  const handleCanvasMouseMove = (e: MouseEvent) => {
+  const handleCanvasMouseMove = (e: Event) => {
     if ($textEditor) return;
-    camera.handleMouseMove(e);
+    camera?.handleMouseMove(e as MouseEvent);
     if (isLayerEntered) return;
-    const transformedPoint = camera.handleCanvasClick(e);
-    connectionStore.handleCanvasMouseMove(transformedPoint);
+    const transformedPoint = camera?.handleCanvasClick(e as MouseEvent);
+    connectionStore.handleCanvasMouseMove(transformedPoint!);
   };
 
-  const handleCanvasWheel = (e: WheelEvent) => {
+  const handleCanvasWheel = (e: Event) => {
     if ($textEditor) return;
-    camera.handleWheelChange(e);
+    camera?.handleWheelChange(e as WheelEvent);
   };
 
   const handleLayerMouseDown = () => {
     canvasStore.setIsSelected(true);
   };
 
-  const handleLayerActive = (e: CustomEvent<ResizableLayerEventDetails>) => {
-    if (!e.detail) return;
-    canvasStore.selectShape(e.detail.entityId);
+  const handleLayerActive = (data: ResizableLayerEventData) => {
+    canvasStore.selectShape(data.entityId);
   };
 
-  const handleLayerLeave = (e: CustomEvent<ResizableLayerEventDetails>) => {
-    if (!e.detail) return;
-    canvasStore.deselectShape(e.detail.entityId);
+  const handleLayerLeave = (data: ResizableLayerEventData) => {
+    canvasStore.deselectShape(data.entityId);
     canvasStore.setIsSelected(false);
     canvasStore.saveText();
     isLayerEntered = false;
   };
 
-  const handleLayerTouch = (e: CustomEvent<ResizableLayerEventDetails>) => {
-    if (!e.detail) return;
-    connectionStore.handleBoxSelect(e, e.detail.entityId);
+  const handleLayerTouch = (data: ResizableLayerEventData) => {
+    connectionStore.handleBoxSelect(data, data.entityId);
   };
 
-  const handleLayerMove = (e: CustomEvent<ResizableLayerEventDetails>) => {
-    if (!e.detail) return;
-    connectionStore.handleBoxMove(e, e.detail.entityId);
+  const handleLayerMove = (data: ResizableLayerEventData) => {
+    connectionStore.handleBoxMove(data, data.entityId);
   };
 
-  const handleLayerEnter = (e: CustomEvent<ResizableLayerEventDetails>) => {
-    if (!e.detail) return;
+  const handleLayerEnter = (data: ResizableLayerEventData) => {
     isLayerEntered = true;
-    connectionStore.handleBoxEnter(e, e.detail.entityId);
+    connectionStore.handleBoxEnter(data, data.entityId);
   };
 
-  const handleLayerDoubleClick = (e: CustomEvent<ResizableLayerEventDetails>) => {
-    if (connection || !e.detail?.data) return;
-    const { entityId, data, bounds } = e.detail;
-    const transformedPoint = camera.handleLayerDoubleClick(data, bounds);
-    canvasStore.initTextEditor(entityId, transformedPoint);
+  const handleLayerDoubleClick = (e: ResizableLayerEventData & { event: LayerEvent }) => {
+    if (connection || !e.event) return;
+    const { entityId, bounds } = e;
+    const transformedPoint = camera?.handleLayerDoubleClick(e.event, bounds);
+    canvasStore.initTextEditor(entityId, transformedPoint!);
   };
 </script>
 
@@ -138,19 +136,19 @@
     />
   </When>
   <Canvas
-    useLayerEvents={!panning}
+    bind:this={canvas}
+    layerEvents={!panning}
     handleEventsOnLayerMove={connection}
     {clickOutsideExcludedIds}
     width={window.innerWidth}
     height={window.innerHeight}
     style={cursorStyle}
-    bind:this={canvas}
-    on:outclick={() => (selection = [])}
-    on:click={handleCanvasClick}
-    on:mousedown={handleCanvasMouseDown}
-    on:mousemove={handleCanvasMouseMove}
-    on:mouseup={handleCanvasMouseUp}
-    on:wheel={handleCanvasWheel}
+    onoutclick={() => (selection = [])}
+    onclick={handleCanvasClick}
+    onmousemove={handleCanvasMouseMove}
+    onmousedown={handleCanvasMouseDown}
+    onmouseup={handleCanvasMouseUp}
+    onwheel={handleCanvasWheel}
   >
     <Background />
     <When isVisible={$tool === Tools.SELECT}>
@@ -170,13 +168,13 @@
         selectionPath={selection}
         selectOnMakingConnection={connection}
         isMovingBlocked={connection}
-        on:mousedown={handleLayerMouseDown}
-        on:layer.enter={handleLayerEnter}
-        on:layer.touch={handleLayerTouch}
-        on:layer.dblclick={handleLayerDoubleClick}
-        on:layer.active={handleLayerActive}
-        on:layer.leave={handleLayerLeave}
-        on:layer.move={handleLayerMove}
+        onmousedown={handleLayerMouseDown}
+        onlayerenter={handleLayerEnter}
+        onlayertouch={handleLayerTouch}
+        onlayeractive={handleLayerActive}
+        onlayerleave={handleLayerLeave}
+        onlayermove={handleLayerMove}
+        onlayerdblclick={handleLayerDoubleClick}
       />
     {/each}
   </Canvas>

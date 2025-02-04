@@ -13,30 +13,32 @@
 
   import TextEditorMenu from './TextEditorMenu.svelte';
 
-  export let anchorId: string | undefined;
-  export let position: Point | undefined;
-  export let transform: TransformationMatrix | null | undefined;
+  interface Props {
+    anchorId: string | undefined;
+    position: Point | undefined;
+    transform: TransformationMatrix | null | undefined;
+  }
+
+  let { anchorId, position, transform }: Props = $props();
 
   const { shapes, textEditor } = canvasStore;
   const { x = 0, y = 0 } = position || {};
 
-  let textareaRef: HTMLTextAreaElement;
+  let textareaRef: HTMLTextAreaElement | null = $state(null);
+  let textValue = $state($textEditor?.text || '');
   let adaptiveFontSize = $textEditor?.fontSize || DEFAULT_FONT_SIZE;
-  let textValue = $textEditor?.text || '';
 
-  $: shape = $shapes.get(anchorId || '') as BaseCanvasEntity<RectDrawOptions>;
-  $: options = shape?.getOptions();
-  $: initialWidth = options?.initialWidth ?? options?.width;
-  $: initialHeight = options?.initialHeight ?? options?.height;
-  $: height = options?.height || initialHeight;
-  $: scale = options?.scale || DEFAULT_SCALE;
-
-  $: bold = $textEditor?.bold || false;
-  $: italic = $textEditor?.italic || false;
-  $: underline = $textEditor?.underline || false;
-  $: fontSize = $textEditor?.fontSize || DEFAULT_FONT_SIZE;
-  $: textAlign = $textEditor?.textAlign || TextAlign.LEFT;
-  $: textEditorScale = getTextEditorScale(scale);
+  let shape = $derived($shapes.get(anchorId || '') as BaseCanvasEntity<RectDrawOptions>);
+  let options = $derived(shape?.getOptions());
+  let initialWidth = $derived(options?.initialWidth ?? options?.width);
+  let initialHeight = $derived(options?.initialHeight ?? options?.height);
+  let height = $derived(options?.height || initialHeight);
+  let scale = $derived(options?.scale || DEFAULT_SCALE);
+  let bold = $derived($textEditor?.bold || false);
+  let italic = $derived($textEditor?.italic || false);
+  let underline = $derived($textEditor?.underline || false);
+  let fontSize = $derived($textEditor?.fontSize || DEFAULT_FONT_SIZE);
+  let textAlign = $derived($textEditor?.textAlign || TextAlign.LEFT);
 
   const handleTextChange = (e: Event) => {
     textValue = (e.target as HTMLTextAreaElement).value;
@@ -75,11 +77,13 @@
     const inverseScale = DEFAULT_SCALE / (transform.scaleX / transform.initialScale);
     return scale / inverseScale;
   };
+
+  let textEditorScale = $derived(getTextEditorScale(scale));
 </script>
 
 <TextEditorMenu {textareaRef} anchor={shape} {position} {transform} {onFontSizeChange} />
 
-<!-- svelte-ignore a11y-autofocus -->
+<!-- svelte-ignore a11y_autofocus -->
 <textarea
   autofocus
   id="text-editor"
@@ -97,8 +101,8 @@
   style:font-weight={bold ? 800 : 400}
   style:text-decoration={underline ? 'underline' : ''}
   style:text-align={textAlign}
-  on:input={handleTextChange}
-/>
+  oninput={handleTextChange}
+></textarea>
 
 <style>
   .text-editor {

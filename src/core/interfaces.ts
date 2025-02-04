@@ -1,11 +1,8 @@
-import type { createEventDispatcher } from 'svelte';
-import type { LayerManager, Renderer } from 'core/services';
+import type { LayerManager } from 'core/services';
 
 export type AppContext = {
   layerManager: LayerManager;
 };
-
-export type CanvasContextType = CanvasRenderingContext2D | HitCanvasRenderingContext2D;
 
 export type LayerId = number;
 export type Point = Pick<DOMRect, 'x' | 'y'>;
@@ -42,56 +39,6 @@ export type CanvasOptions = {
   initialPixelRatio: PixelRatio;
   pixelRatio: PixelRatio;
 };
-
-export type RenderProps = {
-  ctx: CanvasContextType;
-  renderer: Renderer;
-};
-
-export interface Render {
-  (data: RenderProps): void;
-}
-
-export interface RegisteredLayerMetadata {
-  render: Render;
-  dispatcher?: LayerEventDispatcher;
-  bounds?: Bounds;
-}
-
-export type OriginalEvent = MouseEvent | TouchEvent;
-
-export type ResizeEvent = {
-  resize: {
-    width: number;
-    height: number;
-    pixelRatio: PixelRatio;
-  };
-};
-
-export type CanvasEvents =
-  | 'click'
-  | 'dblclick'
-  | 'contextmenu'
-  | 'wheel'
-  | 'mousedown'
-  | 'mousemove'
-  | 'mouseup'
-  | 'mouseenter'
-  | 'mouseleave'
-  | 'touchstart'
-  | 'touchmove'
-  | 'touchend'
-  | 'touchcancel'
-  | 'pointerdown'
-  | 'pointermove'
-  | 'pointerup'
-  | 'pointercancel'
-  | 'pointerenter'
-  | 'pointerleave';
-
-export type LayerEvents = Record<CanvasEvents, LayerEventDetails>;
-export type LayerEventDispatcher = ReturnType<typeof createEventDispatcher<LayerEvents>>;
-export type LayerEventDetails = Point & { originalEvent: OriginalEvent };
 
 export interface RectDrawOptions {
   x: number;

@@ -4,7 +4,8 @@ import type { HitCanvasRenderingContext2D, LayerId, RGB } from 'core/interfaces'
  * Offscreen canvas settings for rendering optimization.
  */
 const settings: CanvasRenderingContext2DSettings = {
-  willReadFrequently: true,
+  willReadFrequently: false,
+  alpha: false,
 };
 
 /**
@@ -46,25 +47,12 @@ export function createHitCanvas(
   const hitContext = hitCanvas.getContext('2d', settings) as unknown as HitCanvasRenderingContext2D;
   const mainContext = canvas.getContext('2d', contextSettings);
 
-  let activeLayerId: LayerId;
-
-  const hitCanvasObserver = new MutationObserver(() => {
-    hitCanvas.width = canvas.width;
-    hitCanvas.height = canvas.height;
-  });
-
-  hitCanvasObserver.observe(canvas, { attributeFilter: ['width', 'height'] });
-
-  const setActiveLayerId = (layerId: number) => {
-    activeLayerId = layerId;
-  };
-
   const getLayerIdFromUnderlyingPixel = (x: number, y: number) => {
     const [r, g, b] = hitContext.getImageData(x, y, 1, 1).data;
     return convertRGBtoLayerId([r, g, b]);
   };
 
-  const drawLayerOnHitCanvas = () => {
+  const drawLayerOnHitCanvas = (activeLayerId: LayerId) => {
     const [r, g, b] = convertLayerIdToRGB(activeLayerId);
     const layerColor = `rgb(${r},${g},${b})`;
     hitContext.fillStyle = layerColor;
@@ -73,15 +61,36 @@ export function createHitCanvas(
 
   return new Proxy(mainContext as unknown as HitCanvasRenderingContext2D, {
     get(target, property: keyof HitCanvasRenderingContext2D) {
-      if (property === 'getLayerIdAt') return getLayerIdFromUnderlyingPixel;
-      if (property === 'setActiveLayerId') return setActiveLayerId;
+      const { width, height } = canvas;
+
+      if (width !== hitCanvas.width || height !== hitCanvas.height) {
+        hitCanvas.width = width;
+        hitCanvas.height = height;
+      }
+
+      if (property === 'getLayerIdAt') {
+        return getLayerIdFromUnderlyingPixel;
+      }
+      if (property === 'setActiveLayerId') {
+        return drawLayerOnHitCanvas;
+      }
 
       const value = target[property];
-      if (typeof value !== 'function') return value;
+
+      if (typeof value !== 'function') {
+        return value;
+      }
 
       return (...args: unknown[]) => {
-        drawLayerOnHitCanvas();
-        (<Function>hitContext[property])(...args);
+        let proxyProp = property;
+        let proxyArgs = args;
+
+        if (property === 'drawImage') {
+          proxyProp = 'fillRect';
+          proxyArgs = args.slice(-4);
+        }
+
+        (<Function>hitContext[proxyProp])(...proxyArgs);
         return Reflect.apply(value, target, args);
       };
     },

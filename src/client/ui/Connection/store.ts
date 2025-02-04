@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 import type { Point, RectDimension } from 'core/interfaces';
 import { geometryManager } from 'core/services';
 
-import type { ResizableLayerEventDetails } from 'client/ui/ResizableLayer/interfaces';
+import type { ResizableLayerEventData } from 'client/ui/ResizableLayer/interfaces';
 import { Tools, type Tool } from 'client/shared/interfaces';
 import { toolbarStore } from 'client/ui/Toolbar/store';
 
@@ -41,13 +41,13 @@ class ConnectionStore {
     });
   }
 
-  handleBoxEnter(e: CustomEvent<ResizableLayerEventDetails>, boxId: string) {
-    if (!e.detail?.bounds) return;
+  handleBoxEnter(data: ResizableLayerEventData, boxId: string) {
+    if (!data.bounds) return;
 
     const currentConnection = get(this.currentConnection);
     if (this.#tool !== Tools.CONNECT || !currentConnection?.source) return;
 
-    const rect = geometryManager.getRectDimensionFromBounds(e.detail.bounds);
+    const rect = geometryManager.getRectDimensionFromBounds(data.bounds);
 
     this.currentConnection.set({
       source: currentConnection.source,
@@ -55,12 +55,12 @@ class ConnectionStore {
     });
   }
 
-  handleBoxSelect = (e: CustomEvent<ResizableLayerEventDetails>, boxId: string) => {
-    if (!e.detail?.bounds) return;
+  handleBoxSelect = (data: ResizableLayerEventData, boxId: string) => {
+    if (!data.bounds) return;
     if (this.#tool !== Tools.CONNECT) return;
 
     const currentConnection = get(this.currentConnection);
-    const rect = geometryManager.getRectDimensionFromBounds(e.detail?.bounds);
+    const rect = geometryManager.getRectDimensionFromBounds(data.bounds);
 
     if (boxId === currentConnection?.source?.id) {
       this.resetCurrentConnection();
@@ -90,14 +90,14 @@ class ConnectionStore {
     }
   };
 
-  handleBoxMove = (e: CustomEvent<ResizableLayerEventDetails>, boxId: string) => {
-    if (!e.detail?.bounds) return;
+  handleBoxMove = (data: ResizableLayerEventData, boxId: string) => {
+    if (!data.bounds) return;
 
     const connectionIds = this.connectionIdsByBoxId.get(boxId);
     if (!connectionIds) return;
 
     const connections = get(this.connections);
-    const rect = geometryManager.getRectDimensionFromBounds(e.detail.bounds);
+    const rect = geometryManager.getRectDimensionFromBounds(data.bounds);
 
     for (const connectionId of connectionIds) {
       const connection = connections.get(connectionId);

@@ -16,7 +16,7 @@
   const { selectedShapes } = canvasStore;
   const { selectedConnections } = connectionStore;
 
-  $: tools = [
+  let tools = $derived([
     {
       id: 'note',
       label: 'Note',
@@ -73,7 +73,7 @@
       hoverText: 'Delete selected item(s)',
       disabled: $selectedShapes.size === 0 && $selectedConnections.size === 0,
     },
-  ];
+  ]);
 
   const handleDelete = () => {
     canvasStore.deleteShapes();
@@ -95,14 +95,15 @@
 
 <ul class="toolbar" id="toolbar">
   {#each tools as { id, type, label, icon, hoverText, disabled }}
+    {@const SvelteComponent = icon}
     <li>
       <span
         {id}
         tabindex="0"
         role="button"
         class="tool"
-        on:click={() => onClick(type)}
-        on:keydown={() => onClick(type)}
+        onclick={() => onClick(type)}
+        onkeydown={() => onClick(type)}
       >
         <span
           class="icon"
@@ -110,7 +111,7 @@
           class:disabled
           title={hoverText}
         >
-          <svelte:component this={icon} />
+          <SvelteComponent />
         </span>
         <span class="text">{label}</span>
       </span>

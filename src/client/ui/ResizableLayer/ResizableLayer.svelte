@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
 
-  import type { Point, Bounds, LayerEventDetails } from 'core/interfaces';
-  import { geometryManager } from 'core/services';
+  import type { Point, Bounds } from 'core/interfaces';
+  import { geometryManager, type LayerEvent } from 'core/services';
 
   import type { BaseCanvasEntity } from 'client/ui/Canvas/BaseCanvasEntity';
   import type { RectDrawOptions } from 'client/ui/Canvas/CanvasRect';
@@ -12,51 +12,72 @@
 
   import Surface from './ResizableLayerSurface.svelte';
   import Handler from './ResizableLayerHandler.svelte';
-  import {
-    ResizableLayerEvent,
-    ResizableLayerAction,
-    type ResizableLayerEventDispatcher,
-  } from './interfaces';
+  import { ResizableLayerAction, type ResizableLayerEventData } from './interfaces';
+  import { isOverlapped } from './utils';
 
-  // TODO: Get rid of the bounds, use { x, y, width, height } instead
-  export let entityId: string;
-  export let initialBounds: Bounds = { x0: 0, y0: 0, x1: 0, y1: 0 };
-  export let selectionPath: Point[] = [];
-  export let isSelected: boolean = false;
-  export let selectOnMakingConnection: boolean = false;
-  export let isMovingBlocked: boolean = false;
+  interface Props {
+    entityId: string;
+    // TODO: Get rid of the bounds, use { x, y, width, height } instead
+    initialBounds?: Bounds;
+    selectionPath?: Point[];
+    isSelected?: boolean;
+    selectOnMakingConnection?: boolean;
+    isMovingBlocked?: boolean;
+    onmousedown?: (detail: LayerEvent) => void;
+    ontouchstart?: (detail: LayerEvent) => void;
+    onlayerenter?: (detail: ResizableLayerEventData) => void;
+    onlayertouch?: (detail: ResizableLayerEventData) => void;
+    onlayeractive?: (detail: ResizableLayerEventData) => void;
+    onlayerleave?: (detail: ResizableLayerEventData) => void;
+    onlayermove?: (detail: ResizableLayerEventData) => void;
+    onlayerdblclick?: (detail: ResizableLayerEventData & { event: LayerEvent }) => void;
+  }
 
-  const dispatcher = createEventDispatcher<ResizableLayerEventDispatcher>();
+  let {
+    entityId,
+    initialBounds = { x0: 0, y0: 0, x1: 0, y1: 0 },
+    selectionPath = [],
+    isSelected = false,
+    selectOnMakingConnection = false,
+    isMovingBlocked = false,
+    onmousedown,
+    ontouchstart,
+    onlayerenter,
+    onlayertouch,
+    onlayeractive,
+    onlayerleave,
+    onlayermove,
+    onlayerdblclick,
+  }: Props = $props();
+
   const { shapes } = canvasStore;
 
   const [N, S, W, E] = [1, 2, 4, 8];
   const HANDLERS = [N | W, N | E, S | W, S | E];
   const SURFACE = N | S | W | E;
 
-  let { x0, y0, x1, y1 } = initialBounds;
-  let draggedHandler: number | null = null;
-  let hoveredHandler: number | null = null;
-  let currentAction: ResizableLayerAction | null = null;
+  let { x0, y0, x1, y1 } = $state(initialBounds);
+  let draggedHandler: number | null = $state(null);
+  let hoveredHandler: number | null = $state(null);
+  let currentAction: ResizableLayerAction | null = $state(null);
+  let scale = $state(DEFAULT_SCALE);
   let previousTouch: Touch;
-  let scale = DEFAULT_SCALE;
+
+  let bounds = $derived({ x0, y0, x1, y1 });
+  let overlapped = $derived(isOverlapped(bounds, selectionPath));
+  let active = $derived(Boolean(draggedHandler || hoveredHandler) || overlapped);
+  let selected = $derived(active || isSelected);
+
+  let shape = $derived($shapes.get(entityId) as BaseCanvasEntity<RectDrawOptions>);
+  let options = $derived(shape?.getOptions());
+  let initialWidth = $derived(options?.initialWidth ?? options?.width);
+  let initialHeight = $derived(options?.initialHeight ?? options?.height);
 
   onMount(() => {
-    dispatcher(ResizableLayerEvent.ACTIVE, { entityId, bounds });
+    onlayeractive?.({ entityId, bounds });
   });
 
-  $: shape = $shapes.get(entityId) as BaseCanvasEntity<RectDrawOptions>;
-  $: options = shape?.getOptions();
-  $: initialWidth = options?.initialWidth ?? options?.width;
-  $: initialHeight = options?.initialHeight ?? options?.height;
-
-  $: bounds = { x0, y0, x1, y1 };
-  $: active = Boolean(draggedHandler || hoveredHandler) || isOverlapped(selectionPath);
-  $: selected = active || isSelected;
-
-  $: active && dispatcher(ResizableLayerEvent.ACTIVE, { entityId, bounds });
-  $: !active && dispatcher(ResizableLayerEvent.LEAVE, { entityId, bounds });
-
-  $: getHandlerPosition = (handler: number): Point => {
+  let getHandlerPosition = (handler: number): Point => {
     return {
       x: handler & W ? x0 - 5 : handler & E ? x1 + 5 : 0,
       y: handler & N ? y0 - 5 : handler & S ? y1 + 5 : 0,
@@ -64,7 +85,7 @@
   };
 
   // TODO: Handle cursor type change on "mouseover" event
-  $: handlerCursor = (handler: number | null): string => {
+  let handlerCursor = (handler: number | null): string => {
     if (handler === SURFACE) return 'pointer';
 
     if (handler === (N | W) || handler === (S | E)) {
@@ -109,7 +130,7 @@
       scale = shape.getCalculatedScale(ceilWidth, ceilHeight);
     }
 
-    dispatcher(ResizableLayerEvent.MOVE, { entityId, bounds });
+    onlayermove?.({ entityId, bounds });
   };
 
   const onTouchMove = (e: TouchEvent) => {
@@ -122,7 +143,7 @@
     x1 += draggedHandler & E && movementX;
     y1 += draggedHandler & S && movementY;
     previousTouch = e.touches[0];
-    dispatcher(ResizableLayerEvent.MOVE, { entityId, bounds });
+    onlayermove?.({ entityId, bounds });
   };
 
   const onHandlerMouseEnter = (handler: number) => {
@@ -135,16 +156,20 @@
 
   const onSurfaceMouseEnter = () => {
     hoveredHandler = SURFACE;
-    dispatcher(ResizableLayerEvent.ENTER, { entityId, bounds });
+    onlayerenter?.({ entityId, bounds });
   };
 
   const onSurfaceMouseDown = () => {
     draggedHandler = SURFACE;
-    dispatcher(ResizableLayerEvent.TOUCH, { entityId, bounds });
+    onlayeractive?.({ entityId, bounds });
+    onlayertouch?.({ entityId, bounds });
   };
 
-  const onMouseLeave = () => {
-    hoveredHandler = null;
+  const onMouseLeave = (e: LayerEvent) => {
+    if (e.originalEvent.type === 'layer.mouseleave') {
+      hoveredHandler = null;
+      onlayerleave?.({ entityId, bounds });
+    }
   };
 
   const onMouseUp = () => {
@@ -155,14 +180,8 @@
     previousTouch = e.touches[0];
   };
 
-  const onDoubleClick = (e: CustomEvent<LayerEventDetails>) => {
-    dispatcher(ResizableLayerEvent.DOUBLE_CLICK, { entityId, data: e.detail, bounds });
-  };
-
-  const isOverlapped = (selectionPath: Point[]) => {
-    const selectionBounds = geometryManager.getPathBounds(selectionPath);
-    if (!selectionBounds) return false;
-    return geometryManager.isOverlapping(selectionBounds, bounds);
+  const onDoubleClick = (e: LayerEvent) => {
+    onlayerdblclick?.({ event: e, entityId, bounds });
   };
 
   const updateEntityData = () => {
@@ -177,11 +196,11 @@
 
 <svelte:body
   use:cursor={handlerCursor(hoveredHandler ?? draggedHandler)}
-  on:mousemove={onMouseMove}
-  on:mouseup={onMouseUp}
-  on:touchstart={onTouchStart}
-  on:touchmove={onTouchMove}
-  on:pointerdown={onMouseUp}
+  onmousemove={onMouseMove}
+  onmouseup={onMouseUp}
+  ontouchstart={onTouchStart}
+  ontouchmove={onTouchMove}
+  onpointerdown={onMouseUp}
 />
 
 <Surface
@@ -191,17 +210,19 @@
   {currentAction}
   {selectOnMakingConnection}
   active={selected}
-  on:click={updateEntityData}
-  on:dblclick={onDoubleClick}
-  on:mouseleave={onMouseLeave}
-  on:mouseenter={onSurfaceMouseEnter}
-  on:mousedown={onSurfaceMouseDown}
-  on:touchstart={(e) => {
-    e.detail.originalEvent.preventDefault();
+  onclick={updateEntityData}
+  ondblclick={onDoubleClick}
+  onmouseleave={onMouseLeave}
+  onmouseenter={onSurfaceMouseEnter}
+  onmousedown={(e) => {
     onSurfaceMouseDown();
+    onmousedown?.(e);
   }}
-  on:mousedown
-  on:touchstart
+  ontouchstart={(e) => {
+    e.originalEvent.preventDefault();
+    onSurfaceMouseDown();
+    ontouchstart?.(e);
+  }}
 />
 
 <When isVisible={selected && !selectOnMakingConnection}>
@@ -209,16 +230,18 @@
     <Handler
       {...getHandlerPosition(handler)}
       active={hoveredHandler === handler || draggedHandler === handler}
-      on:click={updateEntityData}
-      on:mouseleave={onMouseLeave}
-      on:mouseenter={() => onHandlerMouseEnter(handler)}
-      on:mousedown={() => onHandlerMouseDown(handler)}
-      on:touchstart={(e) => {
-        e.detail.originalEvent.preventDefault();
+      onclick={updateEntityData}
+      onmouseleave={onMouseLeave}
+      onmouseenter={() => onHandlerMouseEnter(handler)}
+      onmousedown={(e) => {
         onHandlerMouseDown(handler);
+        onmousedown?.(e);
       }}
-      on:mousedown
-      on:touchstart
+      ontouchstart={(e) => {
+        e.originalEvent.preventDefault();
+        onHandlerMouseDown(handler);
+        ontouchstart?.(e);
+      }}
     />
   {/each}
 </When>

@@ -1,26 +1,38 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import type { Snippet } from 'svelte';
 
   import type { Point } from 'core/interfaces';
   import { geometryManager } from 'core/services';
 
+  import { type CurveLayerEventDetails } from './interfaces';
   import ControlPoint from './Point.svelte';
-  import { CurveLayerEvent, type CurveLayerEventDetails } from './interfaces';
 
-  export let controlPoints: Point[];
-  export let selectOnMakingConnection: boolean = false;
+  interface Props {
+    controlPoints: Point[];
+    selectOnMakingConnection?: boolean;
+    children?: Snippet;
+    onpointmove?: (details: CurveLayerEventDetails) => void;
+    onpointtouch?: () => void;
+    onpointleave?: () => void;
+  }
 
-  const dispatcher = createEventDispatcher<Record<CurveLayerEvent, CurveLayerEventDetails>>();
+  let {
+    controlPoints,
+    selectOnMakingConnection = false,
+    children,
+    onpointmove,
+    onpointtouch,
+    onpointleave,
+  }: Props = $props();
 
   let selectedPoint: number | null = null;
-  let draggedHandler: number | null = null;
-  let hoveredHandler: number | null = null;
-
-  $: active = draggedHandler !== null || hoveredHandler !== null;
+  let draggedHandler: number | null = $state(null);
+  let hoveredHandler: number | null = $state(null);
+  let active = $derived(draggedHandler !== null || hoveredHandler !== null);
 
   const handleMouseLeave = () => {
     hoveredHandler = null;
-    dispatcher(CurveLayerEvent.LEAVE);
+    onpointleave?.();
   };
 
   const handleMouseUp = () => {
@@ -30,8 +42,7 @@
 
   const handleMouseMove = (e: MouseEvent) => {
     if (selectedPoint === null) return;
-
-    dispatcher(CurveLayerEvent.MOVE, {
+    onpointmove?.({
       index: selectedPoint,
       point: geometryManager.calculatePosition(e),
     });
@@ -44,7 +55,7 @@
   const handleMouseDown = (handle: number) => {
     draggedHandler = handle;
     selectedPoint = handle;
-    dispatcher(CurveLayerEvent.TOUCH);
+    onpointtouch?.();
   };
 
   const cursor = (node: HTMLElement, _: unknown) => ({
@@ -54,18 +65,18 @@
 
 <svelte:body
   use:cursor={active && !selectOnMakingConnection ? 'pointer' : 'auto'}
-  on:mousemove={handleMouseMove}
-  on:mouseup={handleMouseUp}
+  onmousemove={handleMouseMove}
+  onmouseup={handleMouseUp}
 />
 
-<slot />
+{@render children?.()}
 
 {#each controlPoints as point, index}
   <ControlPoint
     {point}
     active={!selectOnMakingConnection && (hoveredHandler === index || draggedHandler === index)}
-    on:mouseleave={handleMouseLeave}
-    on:mouseenter={() => handleMouseEnter(index)}
-    on:mousedown={() => handleMouseDown(index)}
+    onmouseleave={handleMouseLeave}
+    onmouseenter={() => handleMouseEnter(index)}
+    onmousedown={() => handleMouseDown(index)}
   />
 {/each}

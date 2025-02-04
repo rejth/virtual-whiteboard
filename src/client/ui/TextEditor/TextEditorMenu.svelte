@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { type Builder } from 'bits-ui';
   import Bold from 'lucide-svelte/icons/bold';
   import Italic from 'lucide-svelte/icons/italic';
   import Underline from 'lucide-svelte/icons/underline';
@@ -33,32 +34,39 @@
 
   import ColorTile from './ColorTile.svelte';
 
-  export let anchor: BaseCanvasEntity<RectDrawOptions>;
-  export let position: Point | undefined;
-  export let transform: TransformationMatrix | null | undefined;
-  export let textareaRef: HTMLTextAreaElement | null;
-  export let onFontSizeChange: (fontSize: number) => void;
+  interface Props {
+    anchor: BaseCanvasEntity<RectDrawOptions>;
+    position: Point | undefined;
+    transform: TransformationMatrix | null | undefined;
+    textareaRef: HTMLTextAreaElement | null;
+    onFontSizeChange: (fontSize: number) => void;
+  }
+
+  let { anchor, position, transform, textareaRef, onFontSizeChange }: Props = $props();
 
   const { textEditor } = canvasStore;
   const { x = 0, y = 0 } = position || {};
 
-  $: options = anchor?.getOptions();
-  $: width = options?.width || 0;
-  $: color = options?.color || COLORS.TRANSPARENT;
-  $: scale = options?.scale || DEFAULT_SCALE;
+  let options = $derived(anchor?.getOptions());
+  let width = $derived(options?.width || 0);
+  let color = $derived(options?.color || COLORS.TRANSPARENT);
+  let scale = $derived(options?.scale || DEFAULT_SCALE);
+  let bold = $derived($textEditor?.bold || false);
+  let italic = $derived($textEditor?.italic || false);
+  let underline = $derived($textEditor?.underline || false);
+  let fontSize = $derived(`${$textEditor?.fontSize || DEFAULT_FONT_SIZE}`);
 
-  $: bold = $textEditor?.bold || false;
-  $: italic = $textEditor?.italic || false;
-  $: underline = $textEditor?.underline || false;
-  $: font = $textEditor?.font || FONTS[0].value;
-  $: fontSize = `${$textEditor?.fontSize || DEFAULT_FONT_SIZE}`;
-  $: textAlign = $textEditor?.textAlign || TextAlign.LEFT;
+  let font = $state($textEditor?.font || FONTS[0].value);
+  let textAlign = $state($textEditor?.textAlign || TextAlign.LEFT);
+  let fontStyle = $state(['', '', '']);
 
-  $: fontStyle = [
-    bold ? FontStyle.BOLD : '',
-    italic ? FontStyle.ITALIC : '',
-    underline ? TextDecoration.UNDERLINE : '',
-  ];
+  $effect(() => {
+    fontStyle = [
+      bold ? FontStyle.BOLD : '',
+      italic ? FontStyle.ITALIC : '',
+      underline ? TextDecoration.UNDERLINE : '',
+    ];
+  });
 
   const FONT_STYLE_LIST = [
     {
@@ -117,16 +125,7 @@
     },
   ];
 
-  $: align = TEXT_ALIGN_OPTIONS[textAlign];
-  $: menuScale = getMenuScale(scale);
-
-  const getMenuScale = (scale: number) => {
-    if (!transform) return DEFAULT_SCALE;
-    const inverseScale = DEFAULT_SCALE / (transform.scaleX / transform.initialScale);
-    return scale === DEFAULT_SCALE
-      ? scale / inverseScale
-      : transform.scaleX / transform.initialScale;
-  };
+  let align = $derived(TEXT_ALIGN_OPTIONS[textAlign]);
 
   const handleFontSizeChange = (value: number) => {
     const newFontSize = Number(fontSize) + value;
@@ -164,6 +163,16 @@
     canvasStore.updateTextEditor({ textAlign: align });
     textareaRef?.focus();
   };
+
+  const getMenuScale = (scale: number) => {
+    if (!transform) return DEFAULT_SCALE;
+    const inverseScale = DEFAULT_SCALE / (transform.scaleX / transform.initialScale);
+    return scale === DEFAULT_SCALE
+      ? scale / inverseScale
+      : transform.scaleX / transform.initialScale;
+  };
+
+  let menuScale = $derived(getMenuScale(scale));
 </script>
 
 <div
@@ -174,22 +183,24 @@
 >
   <Menubar.Root>
     <When isVisible={anchor.getShapeType() !== ShapeType.TEXT}>
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild let:builder>
-          <Button variant="ghost" builders={[builder]}>
-            <span class="h-6 w-6" style:background-color={color}></span>
-          </Button>
+      <!-- <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          {#snippet children(builder: Builder)}
+            <Button variant="ghost" builders={[builder]}>
+              <span class="h-6 w-6" style:background-color={color}></span>
+            </Button>
+          {/snippet}
         </DropdownMenu.Trigger>
         <DropdownMenu.Content id="text-editor-menu-dropdown" class="w-56">
           <ColorTile {anchor} />
         </DropdownMenu.Content>
-      </DropdownMenu.Root>
+      </DropdownMenu.Root> -->
       <Separator orientation="vertical" />
     </When>
 
     <ToggleGroup.Root type="multiple" size="sm" bind:value={fontStyle}>
       {#each FONT_STYLE_LIST as { value, ariaLabel, Icon, onClick }}
-        <ToggleGroup.Item {value} aria-label={ariaLabel} on:click={onClick}>
+        <ToggleGroup.Item {value} aria-label={ariaLabel} onclick={onClick}>
           <Icon class="h-4 w-4" />
         </ToggleGroup.Item>
       {/each}
@@ -198,8 +209,8 @@
     <Separator orientation="vertical" />
 
     <ToggleGroup.Root bind:value={textAlign}>
-      <ToggleGroup.Item value={align.value} aria-label={align.ariaLabel} on:click={align.onClick}>
-        <svelte:component this={align.Icon} class="h-4 w-4" />
+      <ToggleGroup.Item value={align.value} aria-label={align.ariaLabel} onclick={align.onClick}>
+        <align.Icon class="h-4 w-4" />
       </ToggleGroup.Item>
     </ToggleGroup.Root>
 
@@ -207,7 +218,7 @@
 
     <ToggleGroup.Root size="sm">
       {#each FONT_SIZE_OPTIONS as { value, ariaLabel, Icon, onClick }}
-        <ToggleGroup.Item {value} aria-label={ariaLabel} on:click={onClick}>
+        <ToggleGroup.Item {value} aria-label={ariaLabel} onclick={onClick}>
           <Icon class="h-6 w-6" strokeWidth={1.25} />
         </ToggleGroup.Item>
       {/each}
@@ -216,13 +227,15 @@
     <Separator orientation="vertical" />
 
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild let:builder>
-        <Button variant="ghost" disabled builders={[builder]}>Font</Button>
-      </DropdownMenu.Trigger>
+      <!-- <DropdownMenu.Trigger asChild>
+        {#snippet children(builder: Builder)}
+          <Button variant="ghost" disabled builders={[builder]}>Font</Button>
+        {/snippet}
+      </DropdownMenu.Trigger> -->
       <DropdownMenu.Content id="text-editor-menu-dropdown" class="w-56">
         <DropdownMenu.RadioGroup bind:value={font}>
           {#each FONTS as { value, label }}
-            <DropdownMenu.RadioItem {value} on:click={() => {}}>
+            <DropdownMenu.RadioItem {value} onclick={() => {}}>
               {label}
             </DropdownMenu.RadioItem>
           {/each}
