@@ -76,14 +76,14 @@
     onlayeractive?.({ entityId, bounds });
   });
 
-  let getHandlerPosition = (handler: number): Point => {
+  const getHandlerPosition = (handler: number): Point => {
     return {
       x: handler & W ? x0 - 5 : handler & E ? x1 + 5 : 0,
       y: handler & N ? y0 - 5 : handler & S ? y1 + 5 : 0,
     };
   };
 
-  let handlerCursor = (handler: number | null): string => {
+  const handlerCursor = (handler: number | null): string => {
     if (handler === SURFACE) return 'pointer';
 
     if (handler === (N | W) || handler === (S | E)) {
@@ -128,6 +128,7 @@
       scale = shape.getCalculatedScale(ceilWidth, ceilHeight);
     }
 
+    onlayeractive?.({ entityId, bounds });
     onlayermove?.({ entityId, bounds });
   };
 
@@ -141,6 +142,7 @@
     x1 += draggedHandler & E && movementX;
     y1 += draggedHandler & S && movementY;
     previousTouch = e.touches[0];
+    onlayeractive?.({ entityId, bounds });
     onlayermove?.({ entityId, bounds });
   };
 

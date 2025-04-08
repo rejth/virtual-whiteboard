@@ -69,7 +69,7 @@
     controlPoint = { x: cx, y: cy };
   });
 
-  const controlPointEffect = $derived.by(() => {
+  let controlPointEffect = $derived.by(() => {
     if (isMoving) {
       let midX = (sx + ex) / 2;
       let midY = (sy + ey) / 2;
@@ -105,7 +105,6 @@
   const handleConnectionLeave = () => {
     if (!connectionId || selectOnMakingConnection) return;
     active = false;
-    isMoving = false;
     connectionStore.deselectConnection(connectionId);
   };
 </script>
