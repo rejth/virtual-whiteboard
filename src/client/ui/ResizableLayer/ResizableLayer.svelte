@@ -17,7 +17,6 @@
 
   interface Props {
     entityId: string;
-    // TODO: Get rid of the bounds, use { x, y, width, height } instead
     initialBounds?: Bounds;
     selectionPath?: Point[];
     isSelected?: boolean;
@@ -84,7 +83,6 @@
     };
   };
 
-  // TODO: Handle cursor type change on "mouseover" event
   let handlerCursor = (handler: number | null): string => {
     if (handler === SURFACE) return 'pointer';
 

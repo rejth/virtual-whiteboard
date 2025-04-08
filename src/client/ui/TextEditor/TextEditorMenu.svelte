@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { type Builder } from 'bits-ui';
   import Bold from 'lucide-svelte/icons/bold';
   import Italic from 'lucide-svelte/icons/italic';
   import Underline from 'lucide-svelte/icons/underline';
@@ -125,8 +124,6 @@
     },
   ];
 
-  let align = $derived(TEXT_ALIGN_OPTIONS[textAlign]);
-
   const handleFontSizeChange = (value: number) => {
     const newFontSize = Number(fontSize) + value;
     canvasStore.updateTextEditor({ fontSize: newFontSize });
@@ -150,17 +147,7 @@
   };
 
   const handleTextAlignChange = (value: TextAlign) => {
-    let align = value;
-
-    if (value === TextAlign.LEFT) {
-      align = TextAlign.CENTER;
-    } else if (value === TextAlign.CENTER) {
-      align = TextAlign.RIGHT;
-    } else if (value === TextAlign.RIGHT) {
-      align = TextAlign.LEFT;
-    }
-
-    canvasStore.updateTextEditor({ textAlign: align });
+    canvasStore.updateTextEditor({ textAlign: value });
     textareaRef?.focus();
   };
 
@@ -183,18 +170,16 @@
 >
   <Menubar.Root>
     <When isVisible={anchor.getShapeType() !== ShapeType.TEXT}>
-      <!-- <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          {#snippet children(builder: Builder)}
-            <Button variant="ghost" builders={[builder]}>
-              <span class="h-6 w-6" style:background-color={color}></span>
-            </Button>
-          {/snippet}
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>
+          <Button variant="ghost">
+            <span class="h-6 w-6" style:background-color={color}></span>
+          </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content id="text-editor-menu-dropdown" class="w-56">
           <ColorTile {anchor} />
         </DropdownMenu.Content>
-      </DropdownMenu.Root> -->
+      </DropdownMenu.Root>
       <Separator orientation="vertical" />
     </When>
 
@@ -208,15 +193,17 @@
 
     <Separator orientation="vertical" />
 
-    <ToggleGroup.Root bind:value={textAlign}>
-      <ToggleGroup.Item value={align.value} aria-label={align.ariaLabel} onclick={align.onClick}>
-        <align.Icon class="h-4 w-4" />
-      </ToggleGroup.Item>
+    <ToggleGroup.Root type="single" bind:value={textAlign}>
+      {#each Object.values(TEXT_ALIGN_OPTIONS) as { value, ariaLabel, Icon, onClick }}
+        <ToggleGroup.Item {value} aria-label={ariaLabel} onclick={onClick}>
+          <Icon class="h-4 w-4" />
+        </ToggleGroup.Item>
+      {/each}
     </ToggleGroup.Root>
 
     <Separator orientation="vertical" />
 
-    <ToggleGroup.Root size="sm">
+    <ToggleGroup.Root size="sm" type="single">
       {#each FONT_SIZE_OPTIONS as { value, ariaLabel, Icon, onClick }}
         <ToggleGroup.Item {value} aria-label={ariaLabel} onclick={onClick}>
           <Icon class="h-6 w-6" strokeWidth={1.25} />
@@ -227,11 +214,9 @@
     <Separator orientation="vertical" />
 
     <DropdownMenu.Root>
-      <!-- <DropdownMenu.Trigger asChild>
-        {#snippet children(builder: Builder)}
-          <Button variant="ghost" disabled builders={[builder]}>Font</Button>
-        {/snippet}
-      </DropdownMenu.Trigger> -->
+      <DropdownMenu.Trigger disabled>
+        <Button variant="ghost" disabled>Font</Button>
+      </DropdownMenu.Trigger>
       <DropdownMenu.Content id="text-editor-menu-dropdown" class="w-56">
         <DropdownMenu.RadioGroup bind:value={font}>
           {#each FONTS as { value, label }}
