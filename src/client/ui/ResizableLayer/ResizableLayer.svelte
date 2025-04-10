@@ -64,8 +64,8 @@
 
   let bounds = $derived({ x0, y0, x1, y1 });
   let overlapped = $derived(isOverlapped(bounds, selectionPath));
-  let active = $derived(Boolean(draggedHandler || hoveredHandler) || overlapped);
-  let selected = $derived(active || isSelected);
+  let touched = $derived(Boolean(draggedHandler || hoveredHandler));
+  let active = $derived(touched || overlapped || isSelected);
 
   let shape = $derived($shapes.get(entityId) as BaseCanvasEntity<RectDrawOptions>);
   let options = $derived(shape?.getOptions());
@@ -74,6 +74,14 @@
 
   onMount(() => {
     onlayeractive?.({ entityId, bounds });
+  });
+
+  $effect(() => {
+    if (touched || overlapped) {
+      onlayeractive?.({ entityId, bounds });
+    } else if (selectionPath.length > 0 && !overlapped) {
+      onlayerleave?.({ entityId, bounds });
+    }
   });
 
   const getHandlerPosition = (handler: number): Point => {
@@ -207,9 +215,9 @@
   {entityId}
   {bounds}
   {scale}
+  {active}
   {currentAction}
   {selectOnMakingConnection}
-  active={selected}
   onclick={updateEntityData}
   ondblclick={onDoubleClick}
   onmouseleave={onMouseLeave}
@@ -225,7 +233,7 @@
   }}
 />
 
-<When isVisible={selected && !selectOnMakingConnection}>
+<When isVisible={active && !selectOnMakingConnection}>
   {#each HANDLERS as handler (handler)}
     <Handler
       {...getHandlerPosition(handler)}
