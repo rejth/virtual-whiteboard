@@ -7,9 +7,7 @@ export const enum CurveLayerEvent {
   LEAVE = 'point.leave',
 }
 
-export type CurveLayerEventDetails =
-  | {
-      index: number;
-      point: Point;
-    }
-  | undefined;
+export interface CurveLayerEventDetails {
+  index: number;
+  point: Point;
+}

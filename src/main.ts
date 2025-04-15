@@ -1,3 +1,4 @@
+import { mount } from 'svelte';
 import App from 'client/App.svelte';
 
 const rootElement = document.getElementById('app') as HTMLDivElement;
@@ -8,6 +9,6 @@ if (!rootElement) {
   );
 }
 
-const app = new App({ target: rootElement });
+const app = mount(App, { target: rootElement });
 
 export default app;

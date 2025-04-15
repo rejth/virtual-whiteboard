@@ -1,6 +1,5 @@
 import type {
   BezierCurveDrawOptions,
-  CanvasContextType,
   CanvasOptions,
   ImageDrawOptions,
   CircleDrawOptions,
@@ -16,12 +15,12 @@ import type {
   ClearRectOptions,
   BackgroundPatternRenderer,
 } from 'core/interfaces';
-import { geometryManager as geometry } from 'core/services';
+import { geometryManager as geometry, type CanvasContext } from 'core/services';
 
 import { SMALL_PADDING } from 'client/shared/constants';
 
 export class Renderer {
-  ctx: CanvasContextType | null;
+  ctx: CanvasContext | null;
 
   width: number;
   height: number;
@@ -36,12 +35,12 @@ export class Renderer {
     this.pixelRatio = window.devicePixelRatio ?? 2;
   }
 
-  init(context: CanvasContextType | null, initialPixelRatio: PixelRatio) {
+  init(context: CanvasContext | null, initialPixelRatio: PixelRatio) {
     this.ctx = context;
     this.initialPixelRatio = initialPixelRatio;
   }
 
-  getContext(): CanvasContextType | null {
+  getContext(): CanvasContext | null {
     return this.ctx;
   }
 

@@ -1,10 +1,14 @@
 <script lang="ts">
   import AnimatedLayer from './AnimatedLayer.svelte';
 
-  export let text: string;
-  export let scale: number;
-  export let opacity: number = 1;
-  export let yOffset: number = 0;
+  interface Props {
+    text: string;
+    scale: number;
+    opacity?: number;
+    yOffset?: number;
+  }
+
+  let { text, scale, opacity = 1, yOffset = 0 }: Props = $props();
 </script>
 
 <AnimatedLayer

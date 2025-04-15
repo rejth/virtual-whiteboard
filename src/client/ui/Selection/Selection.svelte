@@ -1,13 +1,17 @@
 <script lang="ts">
-  import type { Point, RenderProps } from 'core/interfaces';
-  import { geometryManager } from 'core/services';
+  import type { Point } from 'core/interfaces';
+  import { geometryManager, type RenderProps } from 'core/services';
   import { Layer } from 'core/ui';
 
   import { COLORS } from 'client/shared/constants';
 
-  export let path: Point[];
+  interface Props {
+    path: Point[];
+  }
 
-  $: _render = ({ ctx, renderer }: RenderProps) => {
+  let { path }: Props = $props();
+
+  let _render = $derived(({ ctx, renderer }: RenderProps) => {
     if (!ctx) return;
 
     const rect = geometryManager.getRectDimensionFromPath(path);
@@ -17,7 +21,7 @@
     renderer.strokeRect({ ...rect, color: COLORS.SELECTION, lineWidth: 2 });
     renderer.fillRect({ ...rect, color: '#35b2dc33' });
     ctx.globalAlpha = 1;
-  };
+  });
 </script>
 
 <Layer render={_render} />

@@ -1,15 +1,26 @@
 <script lang="ts">
-  import type { Point, RenderProps } from 'core/interfaces';
+  import type { Point } from 'core/interfaces';
+  import { type LayerEventHandlers, type RenderProps } from 'core/services';
   import { Layer } from 'core/ui';
 
   import { COLORS } from 'client/shared/constants';
 
-  export let start: Point;
-  export let control: Point;
-  export let end: Point;
-  export let active: boolean = false;
+  interface Props {
+    start: Point;
+    control: Point;
+    end: Point;
+    active?: boolean;
+  }
 
-  $: render = ({ renderer }: RenderProps) => {
+  let {
+    start,
+    control,
+    end,
+    active = false,
+    ...eventHandlers
+  }: Props & LayerEventHandlers = $props();
+
+  let render = $derived(({ renderer }: RenderProps) => {
     renderer.strokeQuadraticCurve({
       start,
       control,
@@ -17,7 +28,7 @@
       lineWidth: 3,
       color: active ? COLORS.SELECTION : '#000',
     });
-  };
+  });
 </script>
 
-<Layer {render} on:mouseenter on:mouseleave on:mousedown on:mouseup on:touchstart on:touchend />
+<Layer {render} {...eventHandlers} />

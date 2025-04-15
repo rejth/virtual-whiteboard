@@ -1,8 +1,9 @@
 <script lang="ts">
-  import type { BackgroundPatternRendererData, RenderProps } from 'core/interfaces';
-  import { BackgroundLayer } from 'core/ui';
+  import type { BackgroundPatternRendererData } from 'core/interfaces';
+  import type { RenderProps } from 'core/services';
+  import { Layer } from 'core/ui';
 
-  $: render = ({ renderer }: RenderProps) => {
+  const render = ({ renderer }: RenderProps) => {
     renderer.renderBackground(10, 10, ({ ctx }: BackgroundPatternRendererData) => {
       ctx.beginPath();
       ctx.fillStyle = '#d2d6db';
@@ -12,4 +13,4 @@
   };
 </script>
 
-<BackgroundLayer {render} />
+<Layer {render} />

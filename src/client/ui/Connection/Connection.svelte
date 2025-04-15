@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getBoxToBoxArrow, type ArrowOptions } from 'perfect-arrows';
 
-  import type { RectDimension } from 'core/interfaces';
+  import type { Point, RectDimension } from 'core/interfaces';
   import { Layer } from 'core/ui';
 
   import { type CurveLayerEventDetails } from 'client/ui/Curve/interfaces';
@@ -14,10 +14,19 @@
 
   type Box = RectDimension | undefined;
 
-  export let connectionId: string | null = null;
-  export let source: ConnectedBox | null = null;
-  export let target: ConnectedBox | null = null;
-  export let selectOnMakingConnection: boolean = false;
+  interface Props {
+    connectionId?: string | null;
+    source?: ConnectedBox | null;
+    target?: ConnectedBox | null;
+    selectOnMakingConnection?: boolean;
+  }
+
+  let {
+    connectionId = null,
+    source = null,
+    target = null,
+    selectOnMakingConnection = false,
+  }: Props = $props();
 
   const arrowOptions: ArrowOptions = {
     bow: 0.1,
@@ -33,28 +42,9 @@
   const endArrowRadius = 6;
   const t = 0.5;
 
-  let active: boolean = false;
-  let isMoving: boolean = false;
-
-  const handleCurvePointMove = (e: CustomEvent<CurveLayerEventDetails>) => {
-    if (!e.detail || selectOnMakingConnection) return;
-    isMoving = true;
-    controlPoint = e.detail.point;
-  };
-
-  const handleConnectionActive = () => {
-    if (!connectionId || selectOnMakingConnection) return;
-    active = true;
-    toolbarStore.changeTool(null);
-    connectionStore.selectConnection(connectionId, { source: source!, target: target! });
-  };
-
-  const handleConnectionLeave = () => {
-    if (!connectionId || selectOnMakingConnection) return;
-    active = false;
-    isMoving = false;
-    connectionStore.deselectConnection(connectionId);
-  };
+  let active: boolean = $state(false);
+  let isMoving: boolean = $state(false);
+  let controlPoint: Point = $state({ x: 0, y: 0 });
 
   const getBoxToBoxConnection = (source: Box, target: Box): number[] => {
     if (!source || !target) return [];
@@ -71,27 +61,55 @@
     );
   };
 
-  $: [sx, sy, cx, cy, ex, ey, _ae, _as, _ac] = getBoxToBoxConnection(source?.box, target?.box);
+  let [sx, sy, cx, cy, ex, ey, _ae, _as, _ac] = $derived(
+    getBoxToBoxConnection(source?.box, target?.box),
+  );
 
-  $: controlPoint = { x: cx, y: cy };
+  $effect(() => {
+    controlPoint = { x: cx, y: cy };
+  });
 
-  $: if (isMoving) {
-    let midX = (sx + ex) / 2;
-    let midY = (sy + ey) / 2;
-    controlPoint = {
-      x: 2 * controlPoint.x - midX,
-      y: 2 * controlPoint.y - midY,
-    };
-  }
+  let controlPointEffect = $derived.by(() => {
+    if (isMoving) {
+      let midX = (sx + ex) / 2;
+      let midY = (sy + ey) / 2;
+      return {
+        x: 2 * controlPoint.x - midX,
+        y: 2 * controlPoint.y - midY,
+      };
+    } else {
+      return controlPoint;
+    }
+  });
 
-  $: arrowAngle = Math.atan2(ey - controlPoint.y, ex - controlPoint.x);
+  let arrowAngle = $derived(Math.atan2(ey - controlPointEffect.y, ex - controlPointEffect.x));
 
-  $: curvePoint = {
-    x: Math.pow(1 - t, 2) * sx + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * ex,
-    y: Math.pow(1 - t, 2) * sy + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * ey,
+  let curvePoint = $derived({
+    x: Math.pow(1 - t, 2) * sx + 2 * (1 - t) * t * controlPointEffect.x + Math.pow(t, 2) * ex,
+    y: Math.pow(1 - t, 2) * sy + 2 * (1 - t) * t * controlPointEffect.y + Math.pow(t, 2) * ey,
+  });
+
+  const handleCurvePointMove = (details: CurveLayerEventDetails) => {
+    if (!details || selectOnMakingConnection) return;
+    isMoving = true;
+    controlPoint = details.point;
+  };
+
+  const handleConnectionActive = () => {
+    if (!connectionId || selectOnMakingConnection) return;
+    active = true;
+    toolbarStore.changeTool(null);
+    connectionStore.selectConnection(connectionId, { source: source!, target: target! });
+  };
+
+  const handleConnectionLeave = () => {
+    if (!connectionId || selectOnMakingConnection) return;
+    active = false;
+    connectionStore.deselectConnection(connectionId);
   };
 </script>
 
+<!--Start Point-->
 <Layer
   render={({ renderer }) => {
     renderer.fillCircle({
@@ -103,16 +121,23 @@
   }}
 />
 
+<!--Control Points and Curve-->
 <ControlPoints
   controlPoints={[curvePoint]}
   {selectOnMakingConnection}
-  on:point.move={handleCurvePointMove}
-  on:point.touch={handleConnectionActive}
-  on:point.leave={handleConnectionLeave}
+  onpointmove={handleCurvePointMove}
+  onpointtouch={handleConnectionActive}
+  onpointleave={handleConnectionLeave}
 >
-  <QuadraticCurve {active} start={{ x: sx, y: sy }} control={controlPoint} end={{ x: ex, y: ey }} />
+  <QuadraticCurve
+    {active}
+    start={{ x: sx, y: sy }}
+    control={controlPointEffect}
+    end={{ x: ex, y: ey }}
+  />
 </ControlPoints>
 
+<!--Arrow-->
 <Layer
   render={({ ctx }) => {
     if (!ctx) return;

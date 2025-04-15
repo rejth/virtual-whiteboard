@@ -33,32 +33,39 @@
 
   import ColorTile from './ColorTile.svelte';
 
-  export let anchor: BaseCanvasEntity<RectDrawOptions>;
-  export let position: Point | undefined;
-  export let transform: TransformationMatrix | null | undefined;
-  export let textareaRef: HTMLTextAreaElement | null;
-  export let onFontSizeChange: (fontSize: number) => void;
+  interface Props {
+    anchor: BaseCanvasEntity<RectDrawOptions>;
+    position: Point | undefined;
+    transform: TransformationMatrix | null | undefined;
+    textareaRef: HTMLTextAreaElement | null;
+    onFontSizeChange: (fontSize: number) => void;
+  }
+
+  let { anchor, position, transform, textareaRef, onFontSizeChange }: Props = $props();
 
   const { textEditor } = canvasStore;
   const { x = 0, y = 0 } = position || {};
 
-  $: options = anchor?.getOptions();
-  $: width = options?.width || 0;
-  $: color = options?.color || COLORS.TRANSPARENT;
-  $: scale = options?.scale || DEFAULT_SCALE;
+  let options = $derived(anchor?.getOptions());
+  let width = $derived(options?.width || 0);
+  let color = $derived(options?.color || COLORS.TRANSPARENT);
+  let scale = $derived(options?.scale || DEFAULT_SCALE);
+  let bold = $derived($textEditor?.bold || false);
+  let italic = $derived($textEditor?.italic || false);
+  let underline = $derived($textEditor?.underline || false);
+  let fontSize = $derived(`${$textEditor?.fontSize || DEFAULT_FONT_SIZE}`);
 
-  $: bold = $textEditor?.bold || false;
-  $: italic = $textEditor?.italic || false;
-  $: underline = $textEditor?.underline || false;
-  $: font = $textEditor?.font || FONTS[0].value;
-  $: fontSize = `${$textEditor?.fontSize || DEFAULT_FONT_SIZE}`;
-  $: textAlign = $textEditor?.textAlign || TextAlign.LEFT;
+  let font = $state($textEditor?.font || FONTS[0].value);
+  let textAlign = $state($textEditor?.textAlign || TextAlign.LEFT);
+  let fontStyle = $state(['', '', '']);
 
-  $: fontStyle = [
-    bold ? FontStyle.BOLD : '',
-    italic ? FontStyle.ITALIC : '',
-    underline ? TextDecoration.UNDERLINE : '',
-  ];
+  $effect(() => {
+    fontStyle = [
+      bold ? FontStyle.BOLD : '',
+      italic ? FontStyle.ITALIC : '',
+      underline ? TextDecoration.UNDERLINE : '',
+    ];
+  });
 
   const FONT_STYLE_LIST = [
     {
@@ -117,17 +124,6 @@
     },
   ];
 
-  $: align = TEXT_ALIGN_OPTIONS[textAlign];
-  $: menuScale = getMenuScale(scale);
-
-  const getMenuScale = (scale: number) => {
-    if (!transform) return DEFAULT_SCALE;
-    const inverseScale = DEFAULT_SCALE / (transform.scaleX / transform.initialScale);
-    return scale === DEFAULT_SCALE
-      ? scale / inverseScale
-      : transform.scaleX / transform.initialScale;
-  };
-
   const handleFontSizeChange = (value: number) => {
     const newFontSize = Number(fontSize) + value;
     canvasStore.updateTextEditor({ fontSize: newFontSize });
@@ -151,19 +147,19 @@
   };
 
   const handleTextAlignChange = (value: TextAlign) => {
-    let align = value;
-
-    if (value === TextAlign.LEFT) {
-      align = TextAlign.CENTER;
-    } else if (value === TextAlign.CENTER) {
-      align = TextAlign.RIGHT;
-    } else if (value === TextAlign.RIGHT) {
-      align = TextAlign.LEFT;
-    }
-
-    canvasStore.updateTextEditor({ textAlign: align });
+    canvasStore.updateTextEditor({ textAlign: value });
     textareaRef?.focus();
   };
+
+  const getMenuScale = (scale: number) => {
+    if (!transform) return DEFAULT_SCALE;
+    const inverseScale = DEFAULT_SCALE / (transform.scaleX / transform.initialScale);
+    return scale === DEFAULT_SCALE
+      ? scale / inverseScale
+      : transform.scaleX / transform.initialScale;
+  };
+
+  let menuScale = $derived(getMenuScale(scale));
 </script>
 
 <div
@@ -175,8 +171,8 @@
   <Menubar.Root>
     <When isVisible={anchor.getShapeType() !== ShapeType.TEXT}>
       <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild let:builder>
-          <Button variant="ghost" builders={[builder]}>
+        <DropdownMenu.Trigger>
+          <Button variant="ghost">
             <span class="h-6 w-6" style:background-color={color}></span>
           </Button>
         </DropdownMenu.Trigger>
@@ -189,7 +185,7 @@
 
     <ToggleGroup.Root type="multiple" size="sm" bind:value={fontStyle}>
       {#each FONT_STYLE_LIST as { value, ariaLabel, Icon, onClick }}
-        <ToggleGroup.Item {value} aria-label={ariaLabel} on:click={onClick}>
+        <ToggleGroup.Item {value} aria-label={ariaLabel} onclick={onClick}>
           <Icon class="h-4 w-4" />
         </ToggleGroup.Item>
       {/each}
@@ -197,17 +193,19 @@
 
     <Separator orientation="vertical" />
 
-    <ToggleGroup.Root bind:value={textAlign}>
-      <ToggleGroup.Item value={align.value} aria-label={align.ariaLabel} on:click={align.onClick}>
-        <svelte:component this={align.Icon} class="h-4 w-4" />
-      </ToggleGroup.Item>
+    <ToggleGroup.Root type="single" bind:value={textAlign}>
+      {#each Object.values(TEXT_ALIGN_OPTIONS) as { value, ariaLabel, Icon, onClick }}
+        <ToggleGroup.Item {value} aria-label={ariaLabel} onclick={onClick}>
+          <Icon class="h-4 w-4" />
+        </ToggleGroup.Item>
+      {/each}
     </ToggleGroup.Root>
 
     <Separator orientation="vertical" />
 
-    <ToggleGroup.Root size="sm">
+    <ToggleGroup.Root size="sm" type="single">
       {#each FONT_SIZE_OPTIONS as { value, ariaLabel, Icon, onClick }}
-        <ToggleGroup.Item {value} aria-label={ariaLabel} on:click={onClick}>
+        <ToggleGroup.Item {value} aria-label={ariaLabel} onclick={onClick}>
           <Icon class="h-6 w-6" strokeWidth={1.25} />
         </ToggleGroup.Item>
       {/each}
@@ -216,13 +214,13 @@
     <Separator orientation="vertical" />
 
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild let:builder>
-        <Button variant="ghost" disabled builders={[builder]}>Font</Button>
+      <DropdownMenu.Trigger disabled>
+        <Button variant="ghost" disabled>Font</Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Content id="text-editor-menu-dropdown" class="w-56">
         <DropdownMenu.RadioGroup bind:value={font}>
           {#each FONTS as { value, label }}
-            <DropdownMenu.RadioItem {value} on:click={() => {}}>
+            <DropdownMenu.RadioItem {value} onclick={() => {}}>
               {label}
             </DropdownMenu.RadioItem>
           {/each}

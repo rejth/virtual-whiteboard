@@ -1,13 +1,18 @@
 <script lang="ts">
-  import type { Point, RenderProps } from 'core/interfaces';
+  import type { Point } from 'core/interfaces';
   import { Layer } from 'core/ui';
 
   import { COLORS } from 'client/shared/constants';
+  import { type LayerEventHandlers, type RenderProps } from 'core/services';
 
-  export let text: string;
-  export let pathPoints: (Point & { angle: number })[];
+  interface Props {
+    text: string;
+    pathPoints: (Point & { angle: number })[];
+  }
 
-  $: render = ({ ctx }: RenderProps) => {
+  let { text, pathPoints, ...eventHandlers }: Props & LayerEventHandlers = $props();
+
+  let render = $derived(({ ctx }: RenderProps) => {
     if (!ctx) return;
 
     ctx.font = `130px 'Fira Mono', monospace`;
@@ -52,7 +57,7 @@
 
     ctx.strokeStyle = COLORS.STICKER_ORANGE;
     ctx.strokeRect(overallBBox.xMin, overallBBox.yMin, overallWidth, overallHeight);
-  };
+  });
 </script>
 
-<Layer {render} on:mouseenter on:mouseleave on:mousedown on:mouseup on:touchstart on:touchend />
+<Layer {render} {...eventHandlers} />

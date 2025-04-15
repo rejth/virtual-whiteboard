@@ -1,21 +1,28 @@
 <script lang="ts">
-  import { spring, tweened } from 'svelte/motion';
+  import { Spring, Tween } from 'svelte/motion';
   import { quadInOut as easing } from 'svelte/easing';
 
-  import type { CanvasContextType, RenderProps } from 'core/interfaces';
+  import type { CanvasContext, RenderProps } from 'core/services';
   import { Layer } from 'core/ui';
 
   import { position, activeLayer, type Render } from './store';
 
-  export let name: string;
-  export let render: Render;
+  interface Props {
+    name: string;
+    render: Render;
+  }
+
+  let { name, render }: Props = $props();
 
   const id = Symbol();
+  let active = $derived($activeLayer?.id === id);
+  let inactive = $derived($activeLayer?.id && !active);
+  let point = $derived($position);
 
   const styleTween = (initial: number) => {
-    const tween = tweened(initial, { duration: 250, easing });
+    const tween = new Tween(initial, { duration: 250, easing });
     return {
-      subscribe: tween.subscribe,
+      value: tween.current,
       set: (value: number) => tween.set(value, { delay: Math.random() * 50 + 10 }),
     };
   };
@@ -23,50 +30,52 @@
   const blur = styleTween(0);
   const saturation = styleTween(1);
   const opacity = styleTween(1);
-  const scale = spring(1, { stiffness: 0.1, damping: 0.2 });
+  const scale = new Spring(1, { stiffness: 0.1, damping: 0.2 });
 
-  $: active = $activeLayer?.id === id;
-  $: inactive = $activeLayer?.id && !active;
+  $effect(() => {
+    blur.set(inactive ? 0.018 : 0);
+  });
+  $effect(() => {
+    saturation.set(inactive ? 0.4 : 1);
+  });
+  $effect(() => {
+    opacity.set(inactive ? 0.5 : 1);
+  });
+  $effect(() => {
+    scale.set(!$activeLayer?.id ? 1 : (!active ? 0.95 : 1.1) + Math.random() / 10);
+  });
 
-  $: blur.set(inactive ? 0.018 : 0);
-  $: saturation.set(inactive ? 0.4 : 1);
-  $: opacity.set(inactive ? 0.5 : 1);
-  $: scale.set(!$activeLayer?.id ? 1 : (!active ? 0.95 : 1.1) + Math.random() / 10);
-
-  $: point = $position;
-
-  $: styleActive = (context: CanvasContextType) => () => {
+  let styleActive = $derived((ctx: CanvasContext) => () => {
     if (active) {
-      context.setLineDash([4, 4]);
-      context.strokeStyle = '#dcdcdc';
-      context.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = '#dcdcdc';
+      ctx.lineWidth = 2;
     }
-
     return active;
-  };
+  });
 
-  $: _render = ({ ctx, renderer }: RenderProps) => {
+  let _render = $derived(({ ctx, renderer }: RenderProps) => {
     const { width, height } = renderer.getCanvasOptions();
 
     ctx.save();
 
     ctx.translate(point.x, point.y);
-    ctx.scale($scale, $scale);
+    ctx.scale(scale.current, scale.current);
     ctx.translate(-point.x, -point.y);
-    ctx.globalAlpha = $opacity;
-    ctx.filter = `blur(${width * $blur}px) saturate(${$saturation * 100}%)`;
+    ctx.globalAlpha = opacity.value;
+    ctx.filter = `blur(${width * blur.value}px) saturate(${saturation.value * 100}%)`;
     render({ ctx, renderer, width, height, active: styleActive(ctx) });
 
     ctx.restore();
-  };
+  });
 </script>
 
 <Layer
   render={_render}
-  on:pointerenter={() => ($activeLayer = { name, id })}
-  on:touchstart={() => ($activeLayer = { name, id })}
-  on:pointerleave={() => ($activeLayer = null)}
-  on:touchend={() => ($activeLayer = null)}
-  on:pointerdown={() => scale.set(0.95)}
-  on:pointerup={() => scale.set(1.1)}
+  onpointerenter={() => ($activeLayer = { name, id })}
+  ontouchstart={() => ($activeLayer = { name, id })}
+  onpointerleave={() => ($activeLayer = null)}
+  ontouchend={() => ($activeLayer = null)}
+  onpointerdown={() => scale.set(0.95)}
+  onpointerup={() => scale.set(1.1)}
 />

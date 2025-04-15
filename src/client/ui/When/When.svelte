@@ -1,7 +1,14 @@
 <script lang="ts">
-  export let isVisible: boolean;
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    isVisible: boolean;
+    children?: Snippet;
+  }
+
+  let { isVisible, children }: Props = $props();
 </script>
 
 {#if isVisible}
-  <slot />
+  {@render children?.()}
 {/if}

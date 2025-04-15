@@ -1,7 +1,7 @@
 import { writable, type Writable } from 'svelte/store';
 
-import type { CanvasContextType, Point } from 'core/interfaces';
-import type { Renderer } from 'core/services';
+import type { Point } from 'core/interfaces';
+import type { CanvasContext, Renderer } from 'core/services';
 
 export interface ActiveLayer {
   id: symbol;
@@ -9,7 +9,7 @@ export interface ActiveLayer {
 }
 
 export interface RenderProps {
-  ctx: CanvasContextType;
+  ctx: CanvasContext;
   renderer: Renderer;
   width: number;
   height: number;

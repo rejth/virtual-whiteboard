@@ -2,8 +2,8 @@
   import { Layer } from 'core/ui';
   import { position, activeLayer } from './store';
 
-  $: point = $position;
-  $: text = `<${$activeLayer?.name} />`;
+  let point = $derived($position);
+  let text = $derived(`<${$activeLayer?.name} />`);
 </script>
 
 <Layer

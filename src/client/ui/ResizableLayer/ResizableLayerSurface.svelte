@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { RenderProps, Bounds, RectDimension } from 'core/interfaces';
-  import { geometryManager } from 'core/services';
+  import type { Bounds, RectDimension } from 'core/interfaces';
+  import { geometryManager, type LayerEventHandlers, type RenderProps } from 'core/services';
   import { Layer } from 'core/ui';
 
   import type { RectDrawOptions } from 'client/ui/Canvas/CanvasRect';
@@ -10,17 +10,28 @@
   import { canvasStore } from 'client/ui/Canvas/store';
   import { COLORS } from 'client/shared/constants';
 
-  export let bounds: Bounds;
-  export let active: boolean;
-  export let selectOnMakingConnection: boolean;
+  interface Props {
+    bounds: Bounds;
+    active: boolean;
+    selectOnMakingConnection: boolean;
+    entityId: string;
+    scale: number;
+    currentAction: ResizableLayerAction | null;
+  }
 
-  export let entityId: string;
-  export let scale: number;
-  export let currentAction: ResizableLayerAction | null;
+  let {
+    bounds,
+    active,
+    selectOnMakingConnection,
+    entityId,
+    scale,
+    currentAction,
+    ...eventHandlers
+  }: Props & LayerEventHandlers = $props();
 
   const { shapes, textEditor } = canvasStore;
 
-  $: renderRect = ({ renderer }: RenderProps) => {
+  let renderRect = $derived(({ renderer }: RenderProps) => {
     const rect = $shapes.get(entityId) as BaseCanvasEntity<RectDrawOptions>;
     if (!rect) return;
 
@@ -42,9 +53,9 @@
     } else if (snapshot) {
       renderer.drawImage({ image: snapshot, ...drawOptions });
     }
-  };
+  });
 
-  $: render = ({ ctx, renderer }: RenderProps) => {
+  let render = $derived(({ ctx, renderer }: RenderProps) => {
     const rect = geometryManager.getRectDimensionFromBounds(bounds);
 
     renderRect({ ctx, renderer });
@@ -68,22 +79,11 @@
 
       renderer.strokeRect({
         ...dimension,
-        color: selectOnMakingConnection ? '#000' : COLORS.SELECTION,
         lineWidth: 2,
+        color: selectOnMakingConnection ? '#000' : COLORS.SELECTION,
       });
     }
-  };
+  });
 </script>
 
-<Layer
-  {bounds}
-  {render}
-  on:mouseenter
-  on:mouseleave
-  on:mousedown
-  on:mouseup
-  on:touchstart
-  on:touchend
-  on:dblclick
-  on:click
-/>
+<Layer {bounds} {render} {...eventHandlers} />
